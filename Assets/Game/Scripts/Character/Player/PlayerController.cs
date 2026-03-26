@@ -4,40 +4,51 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    [Header("Movement Settings")]
-    [SerializeField] private float walkSpeed = 5f;
-    [SerializeField] private float sprintMultiplier = 1.7f; // Во сколько раз быстрее бежим
+    [Header("References")]
+    [SerializeField] private CharacterStats stats; // Ссылка на наш новый скрипт
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator;
 
+    [Header("Movement Settings")]
+    [SerializeField] private float walkSpeed = 5f;
+    [SerializeField] private float sprintMultiplier = 1.7f;
+    
     [Header("Dash Settings")]
     [SerializeField] private float dashSpeed = 15f;
     [SerializeField] private float dashDuration = 0.2f;
     [SerializeField] private float dashCooldown = 1f;
+    [SerializeField] private float dashStaminaCost = 25f; // Стоимость рывка
+
+    [Header("Sprint Settings")]
+    [SerializeField] private float sprintStaminaCost = 15f; // Трата стамины в СЕКУНДУ при беге
     
     private Vector2 moveInput;
     private Vector2 lastMoveDirection = Vector2.down;
     private bool isDashing;
-    private bool isSprinting; // Флаг спринта
+    private bool isSprinting; 
     private bool canDash = true;
 
-    // Автоматически вызывается Action "Move"
+    private void Awake()
+    {
+        // Если забыл перетащить в инспекторе, попробуем найти на этом же объекте
+        if (stats == null) stats = GetComponent<CharacterStats>();
+    }
+
     private void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
         if (moveInput != Vector2.zero) lastMoveDirection = moveInput.normalized;
     }
 
-    // Автоматически вызывается Action "Sprint" (при нажатии и отпускании)
     private void OnSprint(InputValue value)
     {
         isSprinting = value.isPressed;
     }
 
-    // Автоматически вызывается Action "Dash"
     private void OnDash(InputValue value)
     {
-        if (value.isPressed && canDash && !isDashing)
+        // Проверяем: нажата кнопка + КД прошел + мы не в рывке + ЕСТЬ СТАМИНА
+        if (value.isPressed && canDash && !isDashing && stats.UseStamina(dashStaminaCost))
         {
             StartCoroutine(DashRoutine());
         }
@@ -46,14 +57,31 @@ public class PlayerController : MonoBehaviour
     void Update()
     {
         if (isDashing) return;
+
+        // Логика траты стамины при спринте
+        HandleSprintStamina();
         UpdateAnimations();
+    }
+
+    private void HandleSprintStamina()
+    {
+        if (isSprinting && moveInput.sqrMagnitude > 0)
+        {
+            // Пытаемся потратить стамину. UseStamina вернет false, если её нет.
+            bool hasStamina = stats.UseStamina(sprintStaminaCost * Time.deltaTime);
+            
+            if (!hasStamina)
+            {
+                isSprinting = false; // Принудительно выключаем бег, если устали
+            }
+        }
     }
 
     void FixedUpdate()
     {
         if (isDashing) return;
 
-        // Вычисляем итоговую скорость
+        // Скорость зависит от того, бежим ли мы (isSprinting уже учитывает наличие стамины)
         float currentSpeed = isSprinting ? walkSpeed * sprintMultiplier : walkSpeed;
         rb.linearVelocity = moveInput * currentSpeed;
     }
@@ -65,8 +93,6 @@ public class PlayerController : MonoBehaviour
             animator.SetFloat("Horizontal", moveInput.x);
             animator.SetFloat("Vertical", moveInput.y);
             
-            // Если мы бежим, значение Speed в аниматоре будет выше (например, 1.7 вместо 1.0)
-            // Это позволит тебе в Blend Tree сделать разную анимацию для ходьбы и бега
             float animSpeed = isSprinting && moveInput.sqrMagnitude > 0 ? sprintMultiplier : moveInput.sqrMagnitude;
             animator.SetFloat("Speed", animSpeed);
             
