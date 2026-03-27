@@ -1,59 +1,84 @@
 using UnityEngine;
-using UnityEngine.InputSystem; // Добавляем пространство имен
+using UnityEngine.InputSystem;
 
 public class Interactor : MonoBehaviour
 {
+    [Header("Настройки дистанции")]
+    [Tooltip("Расстояние, на котором можно ОТКРЫТЬ сундук")]
     public float interactRange = 2.5f;
+    
+    [Tooltip("Расстояние, при котором сундук АВТОМАТИЧЕСКИ ЗАКРОЕТСЯ")]
+    public float closeRange = 4.0f;
+
+    [Header("Ссылки")]
     public LayerMask interactableLayer;
     public UI_InventoryDisplay uiDisplay;
 
-    // Этот метод будет вызываться автоматически через Player Input компонент
-    // Если в твоем Input Action Asset кнопка называется "Interact"
+    private Inventory currentOpenedChest;
+
+    void Update()
+    {
+        // Проверяем авто-закрытие только если сундук открыт
+        if (currentOpenedChest != null)
+        {
+            float distance = Vector2.Distance(transform.position, currentOpenedChest.transform.position);
+            
+            // Используем closeRange для закрытия
+            if (distance > closeRange)
+            {
+                CloseInventory();
+            }
+        }
+    }
+
     public void OnInteract(InputValue value)
     {
-        // Проверяем только момент нажатия (isPressed)
         if (value.isPressed)
         {
-            Debug.Log("Кнопка E нажата! Пытаюсь открыть инвентарь...");
             ToggleInventory();
         }
     }
 
     private void ToggleInventory()
     {
-        if (uiDisplay.gameObject.activeSelf)
+        // Если инвентарь уже открыт, нажатие "E" всегда его закрывает
+        if (uiDisplay.soloPanel.activeSelf || uiDisplay.dualPanel.activeSelf)
         {
-            uiDisplay.gameObject.SetActive(false);
+            CloseInventory();
+            return;
         }
-        else
-        {
-            CheckInteraction();
-        }
-    }
 
-    void CheckInteraction()
-    {
+        // Для открытия используем interactRange
         Collider2D hit = Physics2D.OverlapCircle(transform.position, interactRange, interactableLayer);
         Inventory pInv = GetComponent<Inventory>();
 
-        uiDisplay.gameObject.SetActive(true);
-
-        // Ищем сундук
         if (hit != null && hit.TryGetComponent<Inventory>(out Inventory chestInv))
         {
-            uiDisplay.OpenInventory(pInv, chestInv);
+            currentOpenedChest = chestInv;
+            uiDisplay.OpenDualInventory(pInv, chestInv);
         }
         else
         {
-            // Открываем только себя
-            uiDisplay.OpenInventory(pInv);
+            currentOpenedChest = null;
+            uiDisplay.OpenSoloInventory(pInv);
         }
     }
-    
-    // Визуализация радиуса взаимодействия в редакторе (удобно для настройки)
+
+    private void CloseInventory()
+    {
+        uiDisplay.CloseAll();
+        currentOpenedChest = null;
+    }
+
+    // Визуализация в редакторе для удобной настройки
     private void OnDrawGizmosSelected()
     {
+        // Желтый круг - зона взаимодействия (открытие)
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactRange);
+
+        // Красный круг - зона разрыва (закрытие)
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, closeRange);
     }
 }

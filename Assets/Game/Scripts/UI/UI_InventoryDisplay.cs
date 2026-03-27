@@ -3,66 +3,88 @@ using TMPro;
 
 public class UI_InventoryDisplay : MonoBehaviour
 {
-    [Header("Player Side")]
-    public Transform playerContainer;
-    public TextMeshProUGUI playerTitle;
+    [Header("Вариант 1: Одиночный (Только игрок)")]
+    public GameObject soloPanel;
+    public Transform soloPlayerContainer;
 
-    [Header("External Side (Chest)")]
-    public GameObject externalPanel; 
-    public Transform externalContainer;
+    [Header("Вариант 2: Двойной (Игрок + Сундук)")]
+    public GameObject dualPanel;
+    public Transform dualPlayerContainer;
+    public Transform dualExternalContainer;
     public TextMeshProUGUI externalTitle;
 
-    [Header("Prefabs")]
+    [Header("Общие настройки")]
     public GameObject slotPrefab;
 
     private Inventory playerInv;
-    private Inventory chestInv;
+    private Inventory currentExternalInv;
 
-    // Открытие рюкзака
-    public void OpenInventory(Inventory pInv, Inventory cInv = null)
+    // Метод 1: Открыть только рюкзак
+    public void OpenSoloInventory(Inventory pInv)
     {
         playerInv = pInv;
-        chestInv = cInv;
+        currentExternalInv = null; // Сундука нет
 
-        playerTitle.text = playerInv.inventoryName;
+        soloPanel.SetActive(true);
+        dualPanel.SetActive(false);
+        
+        RefreshUI();
+    }
 
-        if (chestInv != null)
-        {
-            externalPanel.SetActive(true);
-            externalTitle.text = chestInv.inventoryName;
-        }
-        else
-        {
-            externalPanel.SetActive(false);
-        }
+    // Метод 2: Открыть вместе с сундуком
+    public void OpenDualInventory(Inventory pInv, Inventory eInv)
+    {
+        playerInv = pInv;
+        currentExternalInv = eInv;
+
+        soloPanel.SetActive(false);
+        dualPanel.SetActive(true);
+
+        if (externalTitle != null) externalTitle.text = eInv.inventoryName;
 
         RefreshUI();
     }
 
+    public void CloseAll()
+    {
+        soloPanel.SetActive(false);
+        dualPanel.SetActive(false);
+    }
+
     public void RefreshUI()
     {
-        ClearContainer(playerContainer);
-        ClearContainer(externalContainer);
+        // Очищаем всё
+        ClearContainer(soloPlayerContainer);
+        ClearContainer(dualPlayerContainer);
+        ClearContainer(dualExternalContainer);
 
-        DrawSlots(playerInv, playerContainer, chestInv); // Передаем соседа
-        if (externalPanel.activeSelf && chestInv != null)
+        // Если открыта одиночная панель
+        if (soloPanel.activeSelf)
         {
-            DrawSlots(chestInv, externalContainer, playerInv); // Сосед - игрок
+            DrawSlots(playerInv, soloPlayerContainer, null);
+        }
+        // Если открыта двойная панель
+        else if (dualPanel.activeSelf)
+        {
+            DrawSlots(playerInv, dualPlayerContainer, currentExternalInv);
+            DrawSlots(currentExternalInv, dualExternalContainer, playerInv);
         }
     }
 
-    private void DrawSlots(Inventory currentInv, Transform container, Inventory otherInv)
+    private void DrawSlots(Inventory inv, Transform container, Inventory other)
     {
-        foreach (var slotData in currentInv.slots)
+        if (inv == null || container == null) return;
+        
+        foreach (var slotData in inv.slots)
         {
             GameObject obj = Instantiate(slotPrefab, container);
-            // Setup теперь принимает: данные слота, текущий инвентарь и "соседний"
-            obj.GetComponent<UI_InventorySlot>().Setup(slotData, currentInv, otherInv, this);
+            obj.GetComponent<UI_InventorySlot>().Setup(slotData, inv, other, this);
         }
     }
 
     private void ClearContainer(Transform container)
     {
+        if (container == null) return;
         foreach (Transform child in container) Destroy(child.gameObject);
     }
 }
