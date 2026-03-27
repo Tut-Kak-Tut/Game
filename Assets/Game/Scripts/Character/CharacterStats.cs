@@ -2,28 +2,28 @@ using UnityEngine;
 
 public class CharacterStats : MonoBehaviour
 {
-    [Header("Настройки кулдауна (сек)")]
+    [Header("Regen Cooldown (Seconds)")]
     public float regenCooldown = 2.0f; // Через сколько секунд начнется регенерация
 
-    [Header("Здоровье (Health)")]
+    [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth;
     public float healthRegenRate = 1f;
     private float healthRegenTimer;
 
-    [Header("Мана (Mana)")]
+    [Header("Mana")]
     public float maxMana = 50f;
     public float currentMana;
     public float manaRegenRate = 2f;
     private float manaRegenTimer;
 
-    [Header("Выносливость (Stamina)")]
+    [Header("Stamina")]
     public float maxStamina = 100f;
     public float currentStamina;
     public float staminaRegenRate = 5f;
     private float staminaRegenTimer;
 
-    [Header("Защита и Урон")]
+    [Header("Protection and Damage")]
     public float physicalArmor = 10f;
     public float magicResistance = 5f;
     public float physicalDamage = 15f;
