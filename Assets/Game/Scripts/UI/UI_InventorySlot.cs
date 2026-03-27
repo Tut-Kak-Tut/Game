@@ -7,23 +7,29 @@ public class UI_InventorySlot : MonoBehaviour
     public Image icon;
     public TextMeshProUGUI amountText;
 
-    private InventorySlotData data;
+    private InventorySlotData slotData;
     private Inventory myInventory;
     private Inventory targetInventory;
     private UI_InventoryDisplay display;
 
-    public void Setup(InventorySlotData slotData, Inventory me, Inventory other, UI_InventoryDisplay disp)
+    // Этот метод вызывается из UI_InventoryDisplay при отрисовке
+    public void Setup(InventorySlotData data, Inventory me, Inventory other, UI_InventoryDisplay disp)
     {
-        data = slotData;
+        slotData = data;
         myInventory = me;
-        targetInventory = other;
+        targetInventory = other; // Это инвентарь "напротив" (если открыт сундук)
         display = disp;
 
-        if (data.item != null)
+        UpdateVisuals();
+    }
+
+    private void UpdateVisuals()
+    {
+        if (slotData != null && slotData.item != null)
         {
-            icon.sprite = data.item.icon;
+            icon.sprite = slotData.item.icon;
             icon.enabled = true;
-            amountText.text = data.amount > 1 ? data.amount.ToString() : "";
+            amountText.text = slotData.amount > 1 ? slotData.amount.ToString() : "";
         }
         else
         {
@@ -32,21 +38,41 @@ public class UI_InventorySlot : MonoBehaviour
         }
     }
 
-    // Вызывается при клике на кнопку ячейки
-    public void TransferItem()
+    // ВАЖНО: Привяжи этот метод к событию OnClick компонента Button на префабе слота
+    public void OnSlotClick()
     {
-        if (data.item == null || targetInventory == null) return;
+        // 1. Если ячейка пустая — ничего не делаем
+        if (slotData == null || slotData.item == null) return;
 
-        // Пытаемся добавить предмет в "соседний" инвентарь
-        if (targetInventory.AddItem(data.item, data.amount))
+        // 2. Если второй инвентарь (например, сундук) не открыт — ничего не делаем
+        // (Или можно добавить логику "Использовать/Съесть", если открыт только рюкзак)
+        if (targetInventory == null) 
         {
-            // Если получилось — удаляем из текущего
-            myInventory.RemoveItem(data);
+            Debug.Log("Второй инвентарь не открыт. Некуда перекладывать.");
+            return;
+        }
+
+        // 3. Пытаемся переместить предмет
+        MoveItem();
+    }
+
+    private void MoveItem()
+    {
+        // Пытаемся добавить предмет в целевой инвентарь
+        bool success = targetInventory.AddItem(slotData.item, slotData.amount);
+
+        if (success)
+        {
+            // Если предмет успешно ушел — очищаем текущую ячейку
+            slotData.item = null;
+            slotData.amount = 0;
+
+            // Обновляем весь интерфейс, чтобы изменения были видны везде
             display.RefreshUI();
         }
         else
         {
-            Debug.Log("Нет места в целевом инвентаре!");
+            Debug.Log("Нет места в другом инвентаре!");
         }
     }
 }

@@ -22,30 +22,59 @@ public class Inventory : MonoBehaviour
 
     public bool AddItem(ItemData item, int amount = 1)
     {
+        // ШАГ 1: Если предмет стакаемый, пытаемся добавить в существующие кучки
         if (item.isStackable)
         {
             foreach (var slot in slots)
             {
+                // Если в слоте тот же предмет И он еще не заполнен до максимума
                 if (slot.item == item && slot.amount < item.maxStackSize)
                 {
-                    slot.amount += amount;
-                    onInventoryChanged?.Invoke();
-                    return true;
+                    int roomLeft = item.maxStackSize - slot.amount; // Сколько места осталось в слоте
+                    
+                    if (amount <= roomLeft)
+                    {
+                        // Если всё помещается в этот слот
+                        slot.amount += amount;
+                        onInventoryChanged?.Invoke();
+                        return true;
+                    }
+                    else
+                    {
+                        // Если часть помещается, заполняем слот до конца и продолжаем искать для остатка
+                        slot.amount = item.maxStackSize;
+                        amount -= roomLeft;
+                        // Не выходим из цикла, ищем следующий подходящий слот для "остатка"
+                    }
                 }
             }
         }
 
-        foreach (var slot in slots)
+        // ШАГ 2: Если остались предметы, которые не влезли в стаки (или предмет не стакается)
+        // Ищем пустые слоты, пока не распределим всё количество
+        while (amount > 0)
         {
-            if (slot.item == null)
+            InventorySlotData emptySlot = slots.Find(s => s.item == null);
+
+            if (emptySlot != null)
             {
-                slot.item = item;
-                slot.amount = amount;
+                emptySlot.item = item;
+                
+                // Если количество больше макс. стака, кладем только макс. стак и идем на следующий круг
+                int amountToAdd = Mathf.Min(amount, item.maxStackSize);
+                emptySlot.amount = amountToAdd;
+                amount -= amountToAdd;
+            }
+            else
+            {
+                // Если пустых слотов больше нет, а предметы остались
                 onInventoryChanged?.Invoke();
-                return true;
+                return false; // Инвентарь переполнен
             }
         }
-        return false;
+
+        onInventoryChanged?.Invoke();
+        return true;
     }
 
     // Метод для удаления предмета (пригодится для крафта или выбрасывания)
