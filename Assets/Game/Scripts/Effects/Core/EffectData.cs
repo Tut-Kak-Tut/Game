@@ -1,9 +1,10 @@
 using UnityEngine;
 
-// Перечисления вынесены за пределы класса, чтобы их видели все скрипты в проекте
 public enum EffectType { DamageOverTime, BuffStats, DebuffStats }
-public enum StatType { None, Armor, MagicResistance, PhysicalDamage }
 public enum DamageType { Physical, Magic, True }
+public enum ModificationType { Flat, Percent }
+// Теперь эффекты влияют на основные атрибуты
+public enum StatType { Strength, Agility, Constitution, Intelligence, Wisdom, Charisma }
 
 [CreateAssetMenu(fileName = "NewEffect", menuName = "RPG System/Effect Data")]
 public class EffectData : ScriptableObject
@@ -12,17 +13,15 @@ public class EffectData : ScriptableObject
     public string effectName;
     public Sprite icon;
 
-    [Header("Settings")]
+    [Header("Main Settings")]
     public float duration;       
     public float tickInterval;   
     public float power;          
-    
+    public bool isStackable;     
+
     [Header("Type Config")]
-    public EffectType type;        // Тип эффекта (DOT, Buff, Debuff)
-    public StatType targetStat;    // Что меняем (для баффов)
-    public DamageType damageType;  // Тип урона (для DOT)
-
-
-    public enum EffectType { DamageOverTime, BuffStats, DebuffStats }
-    public enum StatType { None, Armor, MagicResistance, PhysicalDamage }
+    public EffectType type;        
+    public StatType targetStat;    
+    public ModificationType modType; 
+    public DamageType damageType;
 }

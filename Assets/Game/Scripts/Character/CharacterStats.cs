@@ -2,41 +2,52 @@ using UnityEngine;
 
 public class CharacterStats : MonoBehaviour
 {
-    [Header("Regen Settings")]
-    public float regenCooldown = 2.0f;
-    private float healthRegenTimer, manaRegenTimer, staminaRegenTimer;
+    [Header("--- CORE ATTRIBUTES ---")]
+    public int strength = 10;
+    public int agility = 10;
+    public int constitution = 10;
+    public int intelligence = 10;
+    public int wisdom = 10;
+    public int charisma = 10;
 
-    [Header("Health")]
-    public float maxHealth = 100f;
+    [Header("--- ATTRIBUTE MODIFIERS ---")]
+    [field: SerializeField] public float strMod { get; set; }
+    [field: SerializeField] public float agiMod { get; set; }
+    [field: SerializeField] public float conMod { get; set; }
+    [field: SerializeField] public float intMod { get; set; }
+    [field: SerializeField] public float wisMod { get; set; }
+    [field: SerializeField] public float chaMod { get; set; }
+
+    public float FinalStr => strength + strMod;
+    public float FinalAgi => agility + agiMod;
+    public float FinalCon => constitution + conMod;
+    public float FinalInt => intelligence + intMod;
+    public float FinalWis => wisdom + wisMod;
+    public float FinalCha => charisma + chaMod;
+
+    [Header("--- DERIVED STATS (FORMULAS) ---")]
+    public float maxHealth => (FinalCon * 10f) + 50f; 
+    public float maxMana => (FinalInt * 10f) + 20f;
+    public float maxStamina => (FinalCon * 5f) + 50f; // Стамина зависит от Телосложения
+    
+    public float physicalDamage => (FinalStr * 2f);
+    public float physicalArmor => (FinalAgi * 1.5f);
+    public float magicResistance => (FinalWis * 1.5f);
+
+    // СКОРОСТЬ: Базовая 4 + 0.2 за каждое очко Ловкости
+    public float walkSpeed => 4f + (FinalAgi * 0.15f);
+
+    [Header("--- CURRENT RESOURCES ---")]
     public float currentHealth;
-    public float healthRegenRate = 1f;
-
-    [Header("Mana")]
-    public float maxMana = 50f;
     public float currentMana;
-    public float manaRegenRate = 2f;
-
-    [Header("Stamina")]
-    public float maxStamina = 100f;
     public float currentStamina;
-    public float staminaRegenRate = 5f;
 
-    [Header("Base Stats")]
-    [SerializeField] private float basePhysicalArmor = 10f;
-    [SerializeField] private float baseMagicResistance = 5f;
-    [SerializeField] private float basePhysicalDamage = 15f;
+    [Header("--- REGEN RATES ---")]
+    public float healthRegenRate => FinalCon * 0.2f;
+    public float staminaRegenRate => FinalCon * 0.5f; // Реген стамины от Телосложения
 
-    // Свойства для получения итогового значения (База + Модификатор)
-    public float physicalArmor => basePhysicalArmor + armorModifier;
-    public float magicResistance => baseMagicResistance + magicResModifier;
-    public float physicalDamage => basePhysicalDamage + damageModifier;
-
-    // Модификаторы (видны в инспекторе благодаря [field: SerializeField])
-    [field: Header("Current Modifiers")]
-    [field: SerializeField] public float armorModifier { get; set; }
-    [field: SerializeField] public float magicResModifier { get; set; }
-    [field: SerializeField] public float damageModifier { get; set; }
-
+    private float regenTimer;
+    public float regenCooldown = 2.0f;
 
     void Awake()
     {
@@ -52,108 +63,40 @@ public class CharacterStats : MonoBehaviour
 
     private void HandleRegeneration()
     {
-        // Уменьшаем таймеры каждый кадр
-        if (healthRegenTimer > 0) healthRegenTimer -= Time.deltaTime;
-        if (manaRegenTimer > 0) manaRegenTimer -= Time.deltaTime;
-        if (staminaRegenTimer > 0) staminaRegenTimer -= Time.deltaTime;
+        if (regenTimer > 0) regenTimer -= Time.deltaTime;
 
-        // Регенерация здоровья (только если таймер вышел)
-        if (healthRegenTimer <= 0 && currentHealth < maxHealth)
-            currentHealth = Mathf.MoveTowards(currentHealth, maxHealth, healthRegenRate * Time.deltaTime);
-
-        // Регенерация маны
-        if (manaRegenTimer <= 0 && currentMana < maxMana)
-            currentMana = Mathf.MoveTowards(currentMana, maxMana, manaRegenRate * Time.deltaTime);
-
-        // Регенерация стамины
-        if (staminaRegenTimer <= 0 && currentStamina < maxStamina)
-            currentStamina = Mathf.MoveTowards(currentStamina, maxStamina, staminaRegenRate * Time.deltaTime);
-    }
-
-    // --- МЕТОДЫ ПОЛУЧЕНИЯ УРОНА ---
-
-    public void TakePhysicalDamage(float damage)
-    {
-        float finalDamage = Mathf.Max(damage - physicalArmor, 0);
-        ApplyDamage(finalDamage);
-    }
-
-    public void TakeMagicDamage(float damage)
-    {
-        float finalDamage = Mathf.Max(damage - magicResistance, 0);
-        ApplyDamage(finalDamage);
-    }
-
-    private void ApplyDamage(float amount)
-    {
-        currentHealth -= amount;
-        healthRegenTimer = regenCooldown; // Сбрасываем КД регенерации здоровья при уроне
-        
-        if (currentHealth <= 0) Die();
-    }
-
-    // --- МЕТОДЫ ТРАТЫ РЕСУРСОВ ---
-
-    public bool UseMana(float amount)
-    {
-        if (currentMana >= amount)
+        if (regenTimer <= 0)
         {
-            currentMana -= amount;
-            manaRegenTimer = regenCooldown; // Сбрасываем КД регенерации маны
-            return true;
+            if (currentHealth < maxHealth)
+                currentHealth = Mathf.MoveTowards(currentHealth, maxHealth, healthRegenRate * Time.deltaTime);
+            
+            if (currentStamina < maxStamina)
+                currentStamina = Mathf.MoveTowards(currentStamina, maxStamina, staminaRegenRate * Time.deltaTime);
         }
-        return false;
     }
 
+    // МЕТОД ДЛЯ ТРАТЫ СТАМИНЫ (вызывается из PlayerController)
     public bool UseStamina(float amount)
     {
         if (currentStamina >= amount)
         {
             currentStamina -= amount;
-            staminaRegenTimer = regenCooldown; // Сбрасываем КД регенерации стамины
+            regenTimer = regenCooldown; // Сбрасываем таймер регена при трате
             return true;
         }
         return false;
     }
 
-    public bool setHealth(float amount)
-    {
-        if (amount < 0 || amount > maxHealth) return false;
-        currentHealth = amount;
-        return true;
-    }
-    public bool setMana(float amount)
-    {
-        if (amount < 0 || amount > maxMana) return false;
-        currentMana = amount;
-        return true;
-    }
-    public bool setStamina(float amount)
-    {
-        if (amount < 0 || amount > maxStamina) return false;
-        currentStamina = amount;
-        return true;
-    }
-
     public void TakeDamage(float amount, DamageType type)
     {
         float finalDamage = amount;
+        if (type == DamageType.Physical) finalDamage = Mathf.Max(amount - physicalArmor, 0);
+        else if (type == DamageType.Magic) finalDamage = Mathf.Max(amount - magicResistance, 0);
 
-        if (type == DamageType.Physical)
-            finalDamage = Mathf.Max(amount - physicalArmor, 0);
-        else if (type == DamageType.Magic)
-            finalDamage = Mathf.Max(amount - magicResistance, 0);
-        // DamageType.True просто проходит без вычетов
-
-    currentHealth -= finalDamage;
-
-        currentHealth -= finalDamage;
-        healthRegenTimer = regenCooldown; // Сброс регенерации
-        
-        Debug.Log($"{gameObject.name} получил {finalDamage} {type} урона. ХП: {currentHealth}");
-
+        currentHealth = Mathf.Max(currentHealth - finalDamage, 0);
+        regenTimer = regenCooldown; 
         if (currentHealth <= 0) Die();
     }
-    
-    void Die() => Debug.Log("Смерть!");
+
+    void Die() => Debug.Log(gameObject.name + " погиб!");
 }

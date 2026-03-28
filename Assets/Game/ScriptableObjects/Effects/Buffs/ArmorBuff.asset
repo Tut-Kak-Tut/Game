@@ -12,11 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 970b1c4df6ad0054281ac2d7111ce8d1, type: 3}
   m_Name: ArmorBuff
   m_EditorClassIdentifier: Assembly-CSharp::EffectData
-  effectName: 
+  effectName: BuffStats
   icon: {fileID: 0}
-  vfxPrefab: {fileID: 0}
-  duration: 0
+  duration: 15
   tickInterval: 0
-  power: 0
-  type: 0
-  targetStat: 0
+  power: 20
+  isStackable: 0
+  type: 1
+  targetStat: 1
+  modType: 0
+  damageType: 0

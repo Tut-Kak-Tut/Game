@@ -11,19 +11,20 @@ public class EffectHandler : MonoBehaviour
     public void ApplyEffect(EffectData data)
     {
         var existing = _activeEffects.Find(e => e.Data == data);
-        if (existing != null)
+        
+        // Если эффект не стакается и уже есть — обновляем время
+        if (existing != null && !data.isStackable)
         {
             existing.RemainingTime = data.duration;
+            return;
         }
-        else
-        {
-            ActiveEffect newEffect = new ActiveEffect(data);
-            _activeEffects.Add(newEffect);
-            
-            // Если это бафф/дебафф, применяем изменение статов сразу
-            if (data.type != EffectData.EffectType.DamageOverTime)
-                ModifyStat(data, data.power);
-        }
+
+        // В остальных случаях (стакается или новый) — добавляем
+        ActiveEffect newEffect = new ActiveEffect(data);
+        _activeEffects.Add(newEffect);
+        
+        if (data.type != EffectType.DamageOverTime)
+            ModifyStat(data, data.power);
     }
 
     void Update()
@@ -34,14 +35,12 @@ public class EffectHandler : MonoBehaviour
             effect.RemainingTime -= Time.deltaTime;
 
             // Логика периодического урона (DOT)
-            if (effect.Data.type == EffectData.EffectType.DamageOverTime)
+            if (effect.Data.type == EffectType.DamageOverTime) // Убрали EffectData.
             {
                 effect.TickTimer -= Time.deltaTime;
                 if (effect.TickTimer <= 0)
                 {
-                    // ВЫЗЫВАЕМ НОВЫЙ МЕТОД:
                     _stats.TakeDamage(effect.Data.power, effect.Data.damageType);
-                    
                     effect.TickTimer = effect.Data.tickInterval;
                 }
             }
@@ -49,8 +48,8 @@ public class EffectHandler : MonoBehaviour
             // Удаление эффекта
             if (effect.RemainingTime <= 0)
             {
-                if (effect.Data.type != EffectData.EffectType.DamageOverTime)
-                    ModifyStat(effect.Data, -effect.Data.power); // Возвращаем статы назад
+                if (effect.Data.type != EffectType.DamageOverTime) // Убрали EffectData.
+                    ModifyStat(effect.Data, -effect.Data.power);
                 
                 _activeEffects.RemoveAt(i);
             }
@@ -59,11 +58,23 @@ public class EffectHandler : MonoBehaviour
 
     private void ModifyStat(EffectData data, float amount)
     {
+        // В этой системе мы используем Flat изменения для атрибутов (напр. +5 к Силе)
+        // Но если ты выбрал Percent в EffectData, можно умножать базу.
+        float valueToApply = amount;
+        if (data.modType == ModificationType.Percent)
+        {
+            // Пример: +10% к Силе от базового значения
+            // Реализуем по необходимости
+        }
+
         switch (data.targetStat)
         {
-            case EffectData.StatType.Armor: _stats.armorModifier += amount; break;
-            case EffectData.StatType.MagicResistance: _stats.magicResModifier += amount; break;
-            case EffectData.StatType.PhysicalDamage: _stats.damageModifier += amount; break;
+            case StatType.Strength: _stats.strMod += valueToApply; break;
+            case StatType.Agility: _stats.agiMod += valueToApply; break;
+            case StatType.Constitution: _stats.conMod += valueToApply; break;
+            case StatType.Intelligence: _stats.intMod += valueToApply; break;
+            case StatType.Wisdom: _stats.wisMod += valueToApply; break;
+            case StatType.Charisma: _stats.chaMod += valueToApply; break;
         }
     }
 }
