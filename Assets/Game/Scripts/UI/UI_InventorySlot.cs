@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.EventSystems; // Важно: нужно для распознавания ПКМ
 
-public class UI_InventorySlot : MonoBehaviour
+public class UI_InventorySlot : MonoBehaviour, IPointerClickHandler
 {
     public Image icon;
     public TextMeshProUGUI amountText;
@@ -12,12 +13,11 @@ public class UI_InventorySlot : MonoBehaviour
     private Inventory targetInventory;
     private UI_InventoryDisplay display;
 
-    // Этот метод вызывается из UI_InventoryDisplay при отрисовке
     public void Setup(InventorySlotData data, Inventory me, Inventory other, UI_InventoryDisplay disp)
     {
         slotData = data;
         myInventory = me;
-        targetInventory = other; // Это инвентарь "напротив" (если открыт сундук)
+        targetInventory = other;
         display = disp;
 
         UpdateVisuals();
@@ -38,41 +38,70 @@ public class UI_InventorySlot : MonoBehaviour
         }
     }
 
-    // ВАЖНО: Привяжи этот метод к событию OnClick компонента Button на префабе слота
-    public void OnSlotClick()
+    // Этот метод ловит клики мышки автоматически (нужен компонент Button или Image с Raycast Target)
+    public void OnPointerClick(PointerEventData eventData)
     {
-        // 1. Если ячейка пустая — ничего не делаем
         if (slotData == null || slotData.item == null) return;
 
-        // 2. Если второй инвентарь (например, сундук) не открыт — ничего не делаем
-        // (Или можно добавить логику "Использовать/Съесть", если открыт только рюкзак)
-        if (targetInventory == null) 
+        // ЛЕВАЯ КНОПКА: Перекладываем в другой инвентарь
+        if (eventData.button == PointerEventData.InputButton.Left)
         {
-            Debug.Log("Второй инвентарь не открыт. Некуда перекладывать.");
-            return;
+            if (targetInventory != null)
+            {
+                MoveItem();
+            }
         }
-
-        // 3. Пытаемся переместить предмет
-        MoveItem();
+        // ПРАВАЯ КНОПКА: Используем предмет (едим/пьем)
+        else if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            UseItem();
+        }
     }
 
     private void MoveItem()
     {
-        // Пытаемся добавить предмет в целевой инвентарь
-        bool success = targetInventory.AddItem(slotData.item, slotData.amount);
-
-        if (success)
+        if (targetInventory.AddItem(slotData.item, slotData.amount))
         {
-            // Если предмет успешно ушел — очищаем текущую ячейку
             slotData.item = null;
             slotData.amount = 0;
-
-            // Обновляем весь интерфейс, чтобы изменения были видны везде
             display.RefreshUI();
         }
         else
         {
             Debug.Log("Нет места в другом инвентаре!");
         }
+    }
+
+    private void UseItem()
+    {
+        ItemData item = slotData.item;
+
+        // Проверяем, можно ли это вообще использовать
+        if (item.itemType == ItemType.Consumable)
+        {
+            Debug.Log($"Использовано: {item.itemName}. Эффект здоровья: {item.healthEffect}");
+            
+            
+            // Уменьшаем количество
+            slotData.amount--;
+
+            // Если предметы закончились - очищаем слот
+            if (slotData.amount <= 0)
+            {
+                slotData.item = null;
+            }
+
+            display.RefreshUI();
+        }
+        else
+        {
+            Debug.Log("Этот предмет нельзя использовать!");
+        }
+    }
+
+    // Оставляем этот метод для старой привязки через Button Component, если нужно
+    public void OnSlotClick()
+    {
+        OnPointerClick(new PointerEventData(EventSystem.current) { button = PointerEventData.InputButton.Left });
     }
 }

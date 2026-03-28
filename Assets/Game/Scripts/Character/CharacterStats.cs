@@ -106,5 +106,24 @@ public class CharacterStats : MonoBehaviour
         return false;
     }
 
+    public bool setHealth(float amount)
+    {
+        if (amount < 0 || amount > maxHealth) return false;
+        currentHealth = amount;
+        return true;
+    }
+    public bool setMana(float amount)
+    {
+        if (amount < 0 || amount > maxMana) return false;
+        currentMana = amount;
+        return true;
+    }
+    public bool setStamina(float amount)
+    {
+        if (amount < 0 || amount > maxStamina) return false;
+        currentStamina = amount;
+        return true;
+    }
+    
     void Die() => Debug.Log("Смерть!");
 }
