@@ -2,31 +2,41 @@ using UnityEngine;
 
 public class CharacterStats : MonoBehaviour
 {
-    [Header("Regen Cooldown (Seconds)")]
-    public float regenCooldown = 2.0f; // Через сколько секунд начнется регенерация
+    [Header("Regen Settings")]
+    public float regenCooldown = 2.0f;
+    private float healthRegenTimer, manaRegenTimer, staminaRegenTimer;
 
     [Header("Health")]
     public float maxHealth = 100f;
     public float currentHealth;
     public float healthRegenRate = 1f;
-    private float healthRegenTimer;
 
     [Header("Mana")]
     public float maxMana = 50f;
     public float currentMana;
     public float manaRegenRate = 2f;
-    private float manaRegenTimer;
 
     [Header("Stamina")]
     public float maxStamina = 100f;
     public float currentStamina;
     public float staminaRegenRate = 5f;
-    private float staminaRegenTimer;
 
-    [Header("Protection and Damage")]
-    public float physicalArmor = 10f;
-    public float magicResistance = 5f;
-    public float physicalDamage = 15f;
+    [Header("Base Stats")]
+    [SerializeField] private float basePhysicalArmor = 10f;
+    [SerializeField] private float baseMagicResistance = 5f;
+    [SerializeField] private float basePhysicalDamage = 15f;
+
+    // Свойства для получения итогового значения (База + Модификатор)
+    public float physicalArmor => basePhysicalArmor + armorModifier;
+    public float magicResistance => baseMagicResistance + magicResModifier;
+    public float physicalDamage => basePhysicalDamage + damageModifier;
+
+    // Модификаторы (видны в инспекторе благодаря [field: SerializeField])
+    [field: Header("Current Modifiers")]
+    [field: SerializeField] public float armorModifier { get; set; }
+    [field: SerializeField] public float magicResModifier { get; set; }
+    [field: SerializeField] public float damageModifier { get; set; }
+
 
     void Awake()
     {
@@ -123,6 +133,26 @@ public class CharacterStats : MonoBehaviour
         if (amount < 0 || amount > maxStamina) return false;
         currentStamina = amount;
         return true;
+    }
+
+    public void TakeDamage(float amount, DamageType type)
+    {
+        float finalDamage = amount;
+
+        if (type == DamageType.Physical)
+            finalDamage = Mathf.Max(amount - physicalArmor, 0);
+        else if (type == DamageType.Magic)
+            finalDamage = Mathf.Max(amount - magicResistance, 0);
+        // DamageType.True просто проходит без вычетов
+
+    currentHealth -= finalDamage;
+
+        currentHealth -= finalDamage;
+        healthRegenTimer = regenCooldown; // Сброс регенерации
+        
+        Debug.Log($"{gameObject.name} получил {finalDamage} {type} урона. ХП: {currentHealth}");
+
+        if (currentHealth <= 0) Die();
     }
     
     void Die() => Debug.Log("Смерть!");
