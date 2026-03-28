@@ -10,11 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: af8de7fc5682b3441a9773c5549c31db, type: 3}
-  m_Name: HealthPotion
+  m_Name: Ore
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
   itemName: 
-  icon: {fileID: 21300000, guid: a7b12afab90f94b99b54ac34b293b2be, type: 3}
-  isStackable: 1
-  maxStackSize: 10
-  healthRestore: 10
-  manaRestore: 0
+  itemType: 0
+  icon: {fileID: 0}
+  description: 
+  isStackable: 0
+  maxStackSize: 99
+  healthEffect: 0
+  manaEffect: 0
+  staminaEffect: 0
+  damageValue: 0
+  defenseValue: 0
