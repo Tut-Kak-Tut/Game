@@ -4,77 +4,110 @@ using UnityEngine;
 public class EffectHandler : MonoBehaviour
 {
     private CharacterStats _stats;
-    public List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
+    
+    [Header("Debug View")]
+    [SerializeField] private List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
 
-    void Awake() => _stats = GetComponent<CharacterStats>();
+    void Awake() 
+    {
+        _stats = GetComponent<CharacterStats>();
+    }
 
     public void ApplyEffect(EffectData data)
     {
-        var existing = _activeEffects.Find(e => e.Data == data);
+        // 1. Ищем уже существующие копии этого эффекта
+        var existingEffects = _activeEffects.FindAll(e => e.Data == data);
         
-        // Если эффект не стакается и уже есть — обновляем время
-        if (existing != null && !data.isStackable)
+        // 2. Если эффект НЕ стакается и уже висит — просто обновляем ему время
+        if (existingEffects.Count > 0 && !data.isStackable)
         {
-            existing.RemainingTime = data.duration;
+            existingEffects[0].RemainingTime = data.duration;
             return;
         }
 
-        // В остальных случаях (стакается или новый) — добавляем
+        // 3. Если эффект стакается, проверяем лимит (maxStacks)
+        // (Для этого в EffectData должно быть поле maxStacks)
+        if (data.isStackable && existingEffects.Count >= data.maxStacks && data.maxStacks > 0)
+        {
+            // Обновляем время самому "старому" эффекту в пачке
+            existingEffects[0].RemainingTime = data.duration;
+            return;
+        }
+
+        // 4. Создаем и добавляем новый экземпляр эффекта
         ActiveEffect newEffect = new ActiveEffect(data);
         _activeEffects.Add(newEffect);
         
+        // Если это бафф/дебафф (не DOT) — применяем модификаторы сразу
         if (data.type != EffectType.DamageOverTime)
-            ModifyStat(data, data.power);
+        {
+            ModifyStat(data, 1f); 
+        }
+
+        Debug.Log($"Применен эффект: {data.effectName}. Всего стаков: {_activeEffects.FindAll(e => e.Data == data).Count}");
     }
 
     void Update()
     {
+        // Идем с конца списка, чтобы безопасно удалять элементы
         for (int i = _activeEffects.Count - 1; i >= 0; i--)
         {
             var effect = _activeEffects[i];
             effect.RemainingTime -= Time.deltaTime;
 
-            // Логика периодического урона (DOT)
-            if (effect.Data.type == EffectType.DamageOverTime) // Убрали EffectData.
+            // ЛОГИКА ПЕРИОДИЧЕСКОГО УРОНА (DOT)
+            if (effect.Data.type == EffectType.DamageOverTime)
             {
                 effect.TickTimer -= Time.deltaTime;
                 if (effect.TickTimer <= 0)
                 {
-                    _stats.TakeDamage(effect.Data.power, effect.Data.damageType);
+                    // СКЕЙЛИНГ: Базовый урон + 10% от Силы Магии (spellPower)
+                    float finalDamage = effect.Data.dotDamage + (_stats.spellPower * 0.1f);
+                    
+                    _stats.TakeDamage(finalDamage, effect.Data.damageType);
                     effect.TickTimer = effect.Data.tickInterval;
                 }
             }
 
-            // Удаление эффекта
+            // УДАЛЕНИЕ ПО ИСТЕЧЕНИЮ ВРЕМЕНИ
             if (effect.RemainingTime <= 0)
             {
-                if (effect.Data.type != EffectType.DamageOverTime) // Убрали EffectData.
-                    ModifyStat(effect.Data, -effect.Data.power);
-                
-                _activeEffects.RemoveAt(i);
+                RemoveEffectAt(i);
             }
         }
     }
 
-    private void ModifyStat(EffectData data, float amount)
+    private void RemoveEffectAt(int index)
     {
-        // В этой системе мы используем Flat изменения для атрибутов (напр. +5 к Силе)
-        // Но если ты выбрал Percent в EffectData, можно умножать базу.
-        float valueToApply = amount;
-        if (data.modType == ModificationType.Percent)
+        var effect = _activeEffects[index];
+
+        // Если это был бафф, нужно откатать изменения статов назад
+        if (effect.Data.type != EffectType.DamageOverTime)
         {
-            // Пример: +10% к Силе от базового значения
-            // Реализуем по необходимости
+            ModifyStat(effect.Data, -1f);
         }
 
-        switch (data.targetStat)
+        _activeEffects.RemoveAt(index);
+        Debug.Log($"Эффект {effect.Data.effectName} закончился.");
+    }
+
+    private void ModifyStat(EffectData data, float multiplier)
+    {
+        foreach (var mod in data.modifiers)
         {
-            case StatType.Strength: _stats.strMod += valueToApply; break;
-            case StatType.Agility: _stats.agiMod += valueToApply; break;
-            case StatType.Constitution: _stats.conMod += valueToApply; break;
-            case StatType.Intelligence: _stats.intMod += valueToApply; break;
-            case StatType.Wisdom: _stats.wisMod += valueToApply; break;
-            case StatType.Charisma: _stats.chaMod += valueToApply; break;
+            float finalValue = mod.value * multiplier;
+
+            switch (mod.stat)
+            {
+                case StatType.Strength: _stats.strMod += finalValue; break;
+                case StatType.Agility: _stats.agiMod += finalValue; break;
+                case StatType.Constitution: _stats.conMod += finalValue; break;
+                case StatType.Intelligence: _stats.intMod += finalValue; break;
+                case StatType.Wisdom: _stats.wisMod += finalValue; break;
+                case StatType.Charisma: _stats.chaMod += finalValue; break;
+                case StatType.CritChance: _stats.critMod += finalValue; break;
+                case StatType.SpellPower: _stats.spellPowerMod += finalValue; break;
+            }
         }
     }
 }

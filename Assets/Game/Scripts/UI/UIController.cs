@@ -1,40 +1,75 @@
 using UnityEngine;
-using UnityEngine.UI; // Обязательно для работы с Image
+using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private CharacterStats playerStats;
     
-    [Header("Health Bar")]
+    [Header("Bars Fill Images")]
     [SerializeField] private Image healthFill;
-    
-    [Header("Stamina Bar")]
     [SerializeField] private Image staminaFill;
 
+    [Header("Settings")]
+    [SerializeField] private bool smoothUpdates = true;
+    [SerializeField] private float smoothSpeed = 8f;
+
+    private void OnEnable()
+    {
+        if (playerStats != null)
+        {
+            // Подписываемся на события: когда меняются ресурсы или сами статы
+            playerStats.OnResourceChanged += RefreshUI;
+            playerStats.OnStatsRecalculated += RefreshUI;
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (playerStats != null)
+        {
+            // Обязательно отписываемся, чтобы не было ошибок при удалении объекта
+            playerStats.OnResourceChanged -= RefreshUI;
+            playerStats.OnStatsRecalculated -= RefreshUI;
+        }
+    }
+
+    // Этот метод вызывается ТОЛЬКО когда что-то изменилось
+    private void RefreshUI()
+    {
+        if (smoothUpdates)
+        {
+            // Если хотим плавности, запускаем маленькую корутину или используем простой Update
+            // Но для простоты оставим расчет в методе, который дергает событие
+            UpdateBars();
+        }
+        else
+        {
+            // Мгновенное обновление
+            healthFill.fillAmount = playerStats.currentHealth / playerStats.maxHealth;
+            staminaFill.fillAmount = playerStats.currentStamina / playerStats.maxStamina;
+        }
+    }
+
+    // Если ты хочешь ОЧЕНЬ плавную анимацию (Lerp), Update можно оставить, 
+    // но расчет targetFill делать только по событию. 
+    // Однако, самый чистый вариант для производительности — это мгновенное или корутинное обновление.
+    
     void Update()
     {
+        // Оставим только Lerp здесь для визуальной красоты, 
+        // но теперь он работает с уже готовыми данными из CharacterStats
         if (playerStats == null) return;
 
-        // Обновляем полоски каждый кадр
-        UpdateHealth();
-        UpdateStamina();
+        float hTarget = playerStats.currentHealth / playerStats.maxHealth;
+        float sTarget = playerStats.currentStamina / playerStats.maxStamina;
+
+        healthFill.fillAmount = Mathf.MoveTowards(healthFill.fillAmount, hTarget, Time.deltaTime * smoothSpeed);
+        staminaFill.fillAmount = Mathf.MoveTowards(staminaFill.fillAmount, sTarget, Time.deltaTime * smoothSpeed);
     }
 
-    private void UpdateHealth()
+    private void UpdateBars() 
     {
-        // Рассчитываем процент (от 0 до 1)
-        float targetFill = playerStats.currentHealth / playerStats.maxHealth;
-        
-        // Плавное изменение (Lerp) - полоска не будет дергаться
-        healthFill.fillAmount = Mathf.Lerp(healthFill.fillAmount, targetFill, Time.deltaTime * 5f);
-    }
-
-    private void UpdateStamina()
-    {
-        float targetFill = playerStats.currentStamina / playerStats.maxStamina;
-        
-        // Плавное изменение для стамины
-        staminaFill.fillAmount = Mathf.Lerp(staminaFill.fillAmount, targetFill, Time.deltaTime * 10f);
+        // Метод-заглушка для расширения логики (например, изменение цвета полосок при лоу-хп)
     }
 }

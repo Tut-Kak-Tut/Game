@@ -1,10 +1,13 @@
 using UnityEngine;
+using System.Collections.Generic;
 
-public enum EffectType { DamageOverTime, BuffStats, DebuffStats }
-public enum DamageType { Physical, Magic, True }
-public enum ModificationType { Flat, Percent }
-// Теперь эффекты влияют на основные атрибуты
-public enum StatType { Strength, Agility, Constitution, Intelligence, Wisdom, Charisma }
+[System.Serializable]
+public struct StatModifier 
+{
+    public StatType stat; // Теперь берется из GlobalEnums
+    public float value;
+}
+
 
 [CreateAssetMenu(fileName = "NewEffect", menuName = "RPG System/Effect Data")]
 public class EffectData : ScriptableObject
@@ -16,12 +19,16 @@ public class EffectData : ScriptableObject
     [Header("Main Settings")]
     public float duration;       
     public float tickInterval;   
-    public float power;          
     public bool isStackable;     
 
-    [Header("Type Config")]
+    [Header("Multi-Stat Settings")]
+    public List<StatModifier> modifiers = new List<StatModifier>();
+    
+    [Header("Stacking")]
+    public int maxStacks = 1; // По умолчанию 1
+
+    [Header("Logic Config")]
     public EffectType type;        
-    public StatType targetStat;    
-    public ModificationType modType; 
+    public float dotDamage;       
     public DamageType damageType;
 }
