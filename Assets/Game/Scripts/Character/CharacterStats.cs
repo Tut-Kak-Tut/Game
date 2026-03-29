@@ -1,32 +1,80 @@
 using UnityEngine;
+using System; // Нужно для Action
 
 public class CharacterStats : MonoBehaviour
 {
-    [Header("Regen Cooldown (Seconds)")]
-    public float regenCooldown = 2.0f; // Через сколько секунд начнется регенерация
+    // СОБЫТИЯ: на них будут подписываться UI и другие системы
+    public event Action OnResourceChanged;      // Когда меняется текущее ХП/МП/Стамина
+    public event Action OnStatsRecalculated;    // Когда меняются баффы (макс. статы)
 
-    [Header("Health")]
-    public float maxHealth = 100f;
+    [Header("--- CORE ATTRIBUTES ---")]
+    public int strength = 10;
+    public int agility = 10;
+    public int constitution = 10;
+    public int intelligence = 10;
+    public int wisdom = 10;
+    public int charisma = 10;
+
+    [Header("--- ATTRIBUTE MODIFIERS ---")]
+    // С помощью свойств (Properties) мы будем вызывать событие при каждом изменении мода
+    private float _strMod;
+    public float strMod { get => _strMod; set { _strMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    private float _agiMod;
+    public float agiMod { get => _agiMod; set { _agiMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    private float _conMod;
+    public float conMod { get => _conMod; set { _conMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    private float _intMod;
+    public float intMod { get => _intMod; set { _intMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    private float _wisMod;
+    public float wisMod { get => _wisMod; set { _wisMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    private float _chaMod;
+    public float chaMod { get => _chaMod; set { _chaMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    [Header("--- DIRECT MODIFIERS ---")]
+    private float _critMod;
+    public float critMod { get => _critMod; set { _critMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    private float _spellPowerMod;
+    public float spellPowerMod { get => _spellPowerMod; set { _spellPowerMod = value; OnStatsRecalculated?.Invoke(); } }
+
+    // Финальные значения атрибутов
+    public float FinalStr => strength + strMod;
+    public float FinalAgi => agility + agiMod;
+    public float FinalCon => constitution + conMod;
+    public float FinalInt => intelligence + intMod;
+    public float FinalWis => wisdom + wisMod;
+    public float FinalCha => charisma + chaMod;
+
+    [Header("--- DERIVED STATS ---")]
+    public float maxHealth => (FinalCon * 10f) + 50f; 
+    public float maxMana => (FinalInt * 10f) + 20f;
+    public float maxStamina => (FinalCon * 5f) + 50f;
+    
+    public float physicalDamage => (FinalStr * 2f);
+    public float physicalArmor => (FinalAgi * 1.5f);
+    public float magicResistance => (FinalWis * 1.5f);
+    public float walkSpeed => 4f + (FinalAgi * 0.15f);
+
+    [Header("--- ADVANCED STATS ---")]
+    public float critChance => 5f + (FinalAgi * 0.5f) + critMod;
+    public float critMultiplier => 1.5f + (FinalStr * 0.01f);
+    public float spellPower => 10f + (FinalInt * 2f) + spellPowerMod;
+
+    [Header("--- CURRENT RESOURCES ---")]
     public float currentHealth;
-    public float healthRegenRate = 1f;
-    private float healthRegenTimer;
-
-    [Header("Mana")]
-    public float maxMana = 50f;
     public float currentMana;
-    public float manaRegenRate = 2f;
-    private float manaRegenTimer;
-
-    [Header("Stamina")]
-    public float maxStamina = 100f;
     public float currentStamina;
-    public float staminaRegenRate = 5f;
-    private float staminaRegenTimer;
 
-    [Header("Protection and Damage")]
-    public float physicalArmor = 10f;
-    public float magicResistance = 5f;
-    public float physicalDamage = 15f;
+    public float healthRegenRate => FinalCon * 0.2f;
+    public float staminaRegenRate => FinalCon * 0.5f;
+
+    private float regenTimer;
+    public float regenCooldown = 2.0f;
 
     void Awake()
     {
@@ -35,64 +83,42 @@ public class CharacterStats : MonoBehaviour
         currentStamina = maxStamina;
     }
 
-    void Update()
-    {
-        HandleRegeneration();
-    }
+    void Update() => HandleRegeneration();
 
     private void HandleRegeneration()
     {
-        // Уменьшаем таймеры каждый кадр
-        if (healthRegenTimer > 0) healthRegenTimer -= Time.deltaTime;
-        if (manaRegenTimer > 0) manaRegenTimer -= Time.deltaTime;
-        if (staminaRegenTimer > 0) staminaRegenTimer -= Time.deltaTime;
-
-        // Регенерация здоровья (только если таймер вышел)
-        if (healthRegenTimer <= 0 && currentHealth < maxHealth)
-            currentHealth = Mathf.MoveTowards(currentHealth, maxHealth, healthRegenRate * Time.deltaTime);
-
-        // Регенерация маны
-        if (manaRegenTimer <= 0 && currentMana < maxMana)
-            currentMana = Mathf.MoveTowards(currentMana, maxMana, manaRegenRate * Time.deltaTime);
-
-        // Регенерация стамины
-        if (staminaRegenTimer <= 0 && currentStamina < maxStamina)
-            currentStamina = Mathf.MoveTowards(currentStamina, maxStamina, staminaRegenRate * Time.deltaTime);
-    }
-
-    // --- МЕТОДЫ ПОЛУЧЕНИЯ УРОНА ---
-
-    public void TakePhysicalDamage(float damage)
-    {
-        float finalDamage = Mathf.Max(damage - physicalArmor, 0);
-        ApplyDamage(finalDamage);
-    }
-
-    public void TakeMagicDamage(float damage)
-    {
-        float finalDamage = Mathf.Max(damage - magicResistance, 0);
-        ApplyDamage(finalDamage);
-    }
-
-    private void ApplyDamage(float amount)
-    {
-        currentHealth -= amount;
-        healthRegenTimer = regenCooldown; // Сбрасываем КД регенерации здоровья при уроне
+        if (regenTimer > 0) regenTimer -= Time.deltaTime;
         
-        if (currentHealth <= 0) Die();
-    }
-
-    // --- МЕТОДЫ ТРАТЫ РЕСУРСОВ ---
-
-    public bool UseMana(float amount)
-    {
-        if (currentMana >= amount)
+        bool isRegen = false;
+        if (regenTimer <= 0)
         {
-            currentMana -= amount;
-            manaRegenTimer = regenCooldown; // Сбрасываем КД регенерации маны
-            return true;
+            if (currentHealth < maxHealth)
+            {
+                currentHealth = Mathf.MoveTowards(currentHealth, maxHealth, healthRegenRate * Time.deltaTime);
+                isRegen = true;
+            }
+            if (currentStamina < maxStamina)
+            {
+                currentStamina = Mathf.MoveTowards(currentStamina, maxStamina, staminaRegenRate * Time.deltaTime);
+                isRegen = true;
+            }
         }
-        return false;
+        
+        if (isRegen) OnResourceChanged?.Invoke();
+
+        float oldHealth = currentHealth;
+        float oldStamina = currentStamina;
+
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
+        currentMana = Mathf.Clamp(currentMana, 0, maxMana);
+
+        // Если после Clamp значения изменились (например, макс. ХП упало), 
+        // вызываем событие UI, чтобы полоска мгновенно обновилась
+        if (currentHealth != oldHealth || currentStamina != oldStamina)
+        {
+            OnResourceChanged?.Invoke();
+        }
     }
 
     public bool UseStamina(float amount)
@@ -100,30 +126,48 @@ public class CharacterStats : MonoBehaviour
         if (currentStamina >= amount)
         {
             currentStamina -= amount;
-            staminaRegenTimer = regenCooldown; // Сбрасываем КД регенерации стамины
+            regenTimer = regenCooldown;
+            OnResourceChanged?.Invoke(); // Уведомляем об изменении
             return true;
         }
         return false;
     }
 
-    public bool setHealth(float amount)
+    public void TakeDamage(float amount, DamageType type)
     {
-        if (amount < 0 || amount > maxHealth) return false;
-        currentHealth = amount;
-        return true;
+        float finalDamage = amount;
+
+        // РАСЧЕТ УРОНА СО СТАТАМИ
+        if (type == DamageType.Physical)
+            finalDamage = Mathf.Max(amount - physicalArmor, 0);
+        else if (type == DamageType.Magic)
+            finalDamage = Mathf.Max(amount - magicResistance, 0);
+
+        // НАНЕСЕНИЕ УРОНА (МЫ ЭТО УЖЕ ДЕЛАЛИ)
+        currentHealth = Mathf.Max(currentHealth - finalDamage, 0);
+        regenTimer = regenCooldown; 
+
+        // СОБЫТИЯ UI (МЫ ЭТО УЖЕ ДЕЛАЛИ)
+        OnResourceChanged?.Invoke();
+
+        // ========================================================
+        // ВОТ ТУТ ДОБАВЛЯЕМ ВСПЛЫВАЮЩИЙ ТЕКСТ!
+        // ========================================================
+        if (DamageTextManager.Instance != null)
+        {
+            // Спавним чуть выше центра персонажа (+ 2 метра вверх)
+            Vector3 spawnPos = transform.position + Vector3.up * 2f;
+            
+            Color textColor = Color.white;
+            if (type == DamageType.Magic) textColor = Color.cyan;
+            if (type == DamageType.True) textColor = Color.yellow;
+
+            DamageTextManager.Instance.SpawnText(spawnPos, Mathf.RoundToInt(finalDamage).ToString(), textColor);
+        }
+        // ========================================================
+
+        if (currentHealth <= 0) Die();
     }
-    public bool setMana(float amount)
-    {
-        if (amount < 0 || amount > maxMana) return false;
-        currentMana = amount;
-        return true;
-    }
-    public bool setStamina(float amount)
-    {
-        if (amount < 0 || amount > maxStamina) return false;
-        currentStamina = amount;
-        return true;
-    }
-    
-    void Die() => Debug.Log("Смерть!");
+
+    void Die() => Debug.Log(gameObject.name + " погиб!");
 }
