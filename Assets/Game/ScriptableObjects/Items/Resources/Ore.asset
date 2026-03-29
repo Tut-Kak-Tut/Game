@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: af8de7fc5682b3441a9773c5549c31db, type: 3}
   m_Name: Ore
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  itemName: 
+  itemName: Ore
   itemType: 0
   icon: {fileID: 0}
   description: 
-  isStackable: 0
-  maxStackSize: 99
+  isStackable: 1
+  maxStackSize: 10
   healthEffect: 0
   manaEffect: 0
   staminaEffect: 0

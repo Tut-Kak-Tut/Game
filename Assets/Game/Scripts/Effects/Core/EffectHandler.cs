@@ -4,13 +4,18 @@ using UnityEngine;
 public class EffectHandler : MonoBehaviour
 {
     private CharacterStats _stats;
-    
+    private SpriteRenderer _spriteRenderer; // Ссылка на спрайт
+    private Color _originalColor; // Исходный цвет персонажа
+
     [Header("Debug View")]
     [SerializeField] private List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
+    public List<ActiveEffect> ActiveEffects => _activeEffects;
 
     void Awake() 
     {
         _stats = GetComponent<CharacterStats>();
+        _spriteRenderer = GetComponent<SpriteRenderer>(); // Находим рендерер
+        if (_spriteRenderer != null) _originalColor = _spriteRenderer.color;
     }
 
     public void ApplyEffect(EffectData data)
@@ -49,31 +54,41 @@ public class EffectHandler : MonoBehaviour
 
     void Update()
     {
-        // Идем с конца списка, чтобы безопасно удалять элементы
         for (int i = _activeEffects.Count - 1; i >= 0; i--)
         {
             var effect = _activeEffects[i];
             effect.RemainingTime -= Time.deltaTime;
 
-            // ЛОГИКА ПЕРИОДИЧЕСКОГО УРОНА (DOT)
+            // Логика DOT
             if (effect.Data.type == EffectType.DamageOverTime)
             {
                 effect.TickTimer -= Time.deltaTime;
                 if (effect.TickTimer <= 0)
                 {
-                    // СКЕЙЛИНГ: Базовый урон + 10% от Силы Магии (spellPower)
                     float finalDamage = effect.Data.dotDamage + (_stats.spellPower * 0.1f);
-                    
                     _stats.TakeDamage(finalDamage, effect.Data.damageType);
                     effect.TickTimer = effect.Data.tickInterval;
                 }
             }
 
-            // УДАЛЕНИЕ ПО ИСТЕЧЕНИЮ ВРЕМЕНИ
-            if (effect.RemainingTime <= 0)
-            {
-                RemoveEffectAt(i);
-            }
+            if (effect.RemainingTime <= 0) RemoveEffectAt(i);
+        }
+
+        UpdateVisuals(); // Обновляем цвет каждый кадр
+    }
+    private void UpdateVisuals()
+    {
+        if (_spriteRenderer == null) return;
+
+        if (_activeEffects.Count > 0)
+        {
+            // Берем цвет последнего примененного эффекта
+            _spriteRenderer.color = _activeEffects[_activeEffects.Count - 1].Data.effectColor;
+        }
+        else
+        {
+            // Возвращаем исходный цвет, если эффектов нет
+            _spriteRenderer.color = _originalColor;
         }
     }
 

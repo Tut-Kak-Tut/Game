@@ -13,12 +13,13 @@ MonoBehaviour:
   m_Name: PotionEffect
   m_EditorClassIdentifier: Assembly-CSharp::EffectData
   effectName: JAd
-  icon: {fileID: 0}
+  icon: {fileID: 4097080491917255687, guid: e59673954632d42be855cc6c1c61d9a9, type: 3}
+  effectColor: {r: 0.48496643, g: 0.8962264, b: 0.37624598, a: 1}
   duration: 10
   tickInterval: 1
-  power: 5
   isStackable: 1
+  modifiers: []
+  maxStacks: 3
   type: 0
-  targetStat: 0
-  modType: 0
+  dotDamage: 5
   damageType: 2

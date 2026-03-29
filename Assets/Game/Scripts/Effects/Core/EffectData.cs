@@ -15,6 +15,7 @@ public class EffectData : ScriptableObject
     [Header("Visuals")]
     public string effectName;
     public Sprite icon;
+    public Color effectColor = Color.white;
 
     [Header("Main Settings")]
     public float duration;       
