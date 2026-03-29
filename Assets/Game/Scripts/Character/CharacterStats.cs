@@ -105,6 +105,20 @@ public class CharacterStats : MonoBehaviour
         }
         
         if (isRegen) OnResourceChanged?.Invoke();
+
+        float oldHealth = currentHealth;
+        float oldStamina = currentStamina;
+
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
+        currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
+        currentMana = Mathf.Clamp(currentMana, 0, maxMana);
+
+        // Если после Clamp значения изменились (например, макс. ХП упало), 
+        // вызываем событие UI, чтобы полоска мгновенно обновилась
+        if (currentHealth != oldHealth || currentStamina != oldStamina)
+        {
+            OnResourceChanged?.Invoke();
+        }
     }
 
     public bool UseStamina(float amount)
@@ -120,40 +134,40 @@ public class CharacterStats : MonoBehaviour
     }
 
     public void TakeDamage(float amount, DamageType type)
-{
-    float finalDamage = amount;
-
-    // РАСЧЕТ УРОНА СО СТАТАМИ
-    if (type == DamageType.Physical)
-        finalDamage = Mathf.Max(amount - physicalArmor, 0);
-    else if (type == DamageType.Magic)
-        finalDamage = Mathf.Max(amount - magicResistance, 0);
-
-    // НАНЕСЕНИЕ УРОНА (МЫ ЭТО УЖЕ ДЕЛАЛИ)
-    currentHealth = Mathf.Max(currentHealth - finalDamage, 0);
-    regenTimer = regenCooldown; 
-
-    // СОБЫТИЯ UI (МЫ ЭТО УЖЕ ДЕЛАЛИ)
-    OnResourceChanged?.Invoke();
-
-    // ========================================================
-    // ВОТ ТУТ ДОБАВЛЯЕМ ВСПЛЫВАЮЩИЙ ТЕКСТ!
-    // ========================================================
-    if (DamageTextManager.Instance != null)
     {
-        // Спавним чуть выше центра персонажа (+ 2 метра вверх)
-        Vector3 spawnPos = transform.position + Vector3.up * 2f;
-        
-        Color textColor = Color.white;
-        if (type == DamageType.Magic) textColor = Color.cyan;
-        if (type == DamageType.True) textColor = Color.yellow;
+        float finalDamage = amount;
 
-        DamageTextManager.Instance.SpawnText(spawnPos, Mathf.RoundToInt(finalDamage).ToString(), textColor);
+        // РАСЧЕТ УРОНА СО СТАТАМИ
+        if (type == DamageType.Physical)
+            finalDamage = Mathf.Max(amount - physicalArmor, 0);
+        else if (type == DamageType.Magic)
+            finalDamage = Mathf.Max(amount - magicResistance, 0);
+
+        // НАНЕСЕНИЕ УРОНА (МЫ ЭТО УЖЕ ДЕЛАЛИ)
+        currentHealth = Mathf.Max(currentHealth - finalDamage, 0);
+        regenTimer = regenCooldown; 
+
+        // СОБЫТИЯ UI (МЫ ЭТО УЖЕ ДЕЛАЛИ)
+        OnResourceChanged?.Invoke();
+
+        // ========================================================
+        // ВОТ ТУТ ДОБАВЛЯЕМ ВСПЛЫВАЮЩИЙ ТЕКСТ!
+        // ========================================================
+        if (DamageTextManager.Instance != null)
+        {
+            // Спавним чуть выше центра персонажа (+ 2 метра вверх)
+            Vector3 spawnPos = transform.position + Vector3.up * 2f;
+            
+            Color textColor = Color.white;
+            if (type == DamageType.Magic) textColor = Color.cyan;
+            if (type == DamageType.True) textColor = Color.yellow;
+
+            DamageTextManager.Instance.SpawnText(spawnPos, Mathf.RoundToInt(finalDamage).ToString(), textColor);
+        }
+        // ========================================================
+
+        if (currentHealth <= 0) Die();
     }
-    // ========================================================
-
-    if (currentHealth <= 0) Die();
-}
 
     void Die() => Debug.Log(gameObject.name + " погиб!");
 }

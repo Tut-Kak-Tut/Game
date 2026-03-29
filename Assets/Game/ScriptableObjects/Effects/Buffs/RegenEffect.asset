@@ -10,16 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 970b1c4df6ad0054281ac2d7111ce8d1, type: 3}
-  m_Name: PotionEffect
+  m_Name: RegenEffect
   m_EditorClassIdentifier: Assembly-CSharp::EffectData
-  effectName: JAd
-  icon: {fileID: 4097080491917255687, guid: e59673954632d42be855cc6c1c61d9a9, type: 3}
-  effectColor: {r: 0.48496643, g: 0.8962264, b: 0.37624598, a: 1}
+  effectName: RegenEffect
+  icon: {fileID: 21300000, guid: a7b12afab90f94b99b54ac34b293b2be, type: 3}
+  effectColor: {r: 1, g: 1, b: 1, a: 1}
   duration: 10
   tickInterval: 1
   isStackable: 0
   modifiers: []
-  maxStacks: 3
-  type: 0
+  maxStacks: 1
+  type: 3
   dotDamage: 5
-  damageType: 2
+  damageType: 0

@@ -1,10 +1,12 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+
 [System.Serializable]
 public struct StatModifier 
 {
-    public StatType stat; // Теперь берется из GlobalEnums
+    public StatType stat;
+    public ModificationType modType; // Добавлено поле
     public float value;
 }
 
