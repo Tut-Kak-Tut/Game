@@ -12,7 +12,7 @@ public class SceneRuntimeBootstrap : MonoBehaviour
     private void Awake()
     {
         if (damageTextManager == null)
-            damageTextManager = FindFirstObjectByType<DamageTextManager>();
+            damageTextManager = FindAnyObjectByType<DamageTextManager>();
 
         if (enemyAgents != null)
         {
