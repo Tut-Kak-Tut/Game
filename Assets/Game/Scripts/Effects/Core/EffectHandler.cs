@@ -7,6 +7,7 @@ public class EffectHandler : MonoBehaviour
     private CharacterStats _stats;
     private SpriteRenderer _spriteRenderer;
     private Color _originalColor;
+    [SerializeField] private DamageTextManager damageTextManager;
 
     [SerializeField] private List<ActiveEffect> _activeEffects = new List<ActiveEffect>();
     public List<ActiveEffect> ActiveEffects => _activeEffects;
@@ -16,6 +17,13 @@ public class EffectHandler : MonoBehaviour
         _stats = GetComponent<CharacterStats>();
         _spriteRenderer = GetComponent<SpriteRenderer>();
         if (_spriteRenderer != null) _originalColor = _spriteRenderer.color;
+        if (damageTextManager == null)
+            damageTextManager = DamageTextManager.Instance;
+    }
+
+    public void SetDamageTextManager(DamageTextManager manager)
+    {
+        damageTextManager = manager;
     }
 
     public void ApplyEffect(EffectData data)
@@ -74,7 +82,8 @@ public class EffectHandler : MonoBehaviour
                     _stats.currentHealth = Mathf.Min(_stats.currentHealth + effect.Data.dotDamage, _stats.maxHealth);
                     
                     // Спавним ЗЕЛЕНЫЙ текст через твой DamageTextManager
-                    DamageTextManager.Instance.SpawnText(transform.position, effect.Data.dotDamage.ToString(), Color.green);
+                    if (damageTextManager != null)
+                        damageTextManager.SpawnText(transform.position, effect.Data.dotDamage.ToString(), Color.green);
                     
                     // Вспышка зеленым цветом (визуальный тик)
                     StartCoroutine(FlashColor(Color.green, 0.1f)); 

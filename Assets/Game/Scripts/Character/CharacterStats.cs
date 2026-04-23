@@ -3,6 +3,9 @@ using System; // Нужно для Action
 
 public class CharacterStats : MonoBehaviour
 {
+    [Header("External Services")]
+    [SerializeField] private DamageTextManager damageTextManager;
+
     // СОБЫТИЯ: на них будут подписываться UI и другие системы
     public event Action OnResourceChanged;      // Когда меняется текущее ХП/МП/Стамина
     public event Action OnStatsRecalculated;    // Когда меняются баффы (макс. статы)
@@ -78,9 +81,17 @@ public class CharacterStats : MonoBehaviour
 
     void Awake()
     {
+        if (damageTextManager == null)
+            damageTextManager = DamageTextManager.Instance;
+
         currentHealth = maxHealth;
         currentMana = maxMana;
         currentStamina = maxStamina;
+    }
+
+    public void SetDamageTextManager(DamageTextManager manager)
+    {
+        damageTextManager = manager;
     }
 
     void Update() => HandleRegeneration();
@@ -153,7 +164,7 @@ public class CharacterStats : MonoBehaviour
         // ========================================================
         // ВОТ ТУТ ДОБАВЛЯЕМ ВСПЛЫВАЮЩИЙ ТЕКСТ!
         // ========================================================
-        if (DamageTextManager.Instance != null)
+        if (damageTextManager != null)
         {
             // Спавним чуть выше центра персонажа (+ 2 метра вверх)
             Vector3 spawnPos = transform.position + Vector3.up * 2f;
@@ -162,7 +173,7 @@ public class CharacterStats : MonoBehaviour
             if (type == DamageType.Magic) textColor = Color.cyan;
             if (type == DamageType.True) textColor = Color.yellow;
 
-            DamageTextManager.Instance.SpawnText(spawnPos, Mathf.RoundToInt(finalDamage).ToString(), textColor);
+            damageTextManager.SpawnText(spawnPos, Mathf.RoundToInt(finalDamage).ToString(), textColor);
         }
         // ========================================================
 

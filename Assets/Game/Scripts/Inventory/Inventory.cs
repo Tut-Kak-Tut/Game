@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Inventory : MonoBehaviour
 {
-    public string inventoryName = "Инвентарь";
+    public string inventoryName = "Inventory";
     public int slotCount = 20;
     public List<InventorySlotData> slots = new List<InventorySlotData>();
 

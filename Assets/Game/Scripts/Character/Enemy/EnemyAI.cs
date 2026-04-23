@@ -5,11 +5,12 @@ using UnityEngine.AI;
 [RequireComponent(typeof(CharacterStats))]
 public class EnemyAI : MonoBehaviour
 {
-    public CharacterStats stats;
-    public NavMeshAgent agent;
+    [Header("Runtime References")]
+    [SerializeField] private CharacterStats stats;
+    [SerializeField] private NavMeshAgent agent;
 
     [Header("Targeting")]
-    public Transform target;
+    [SerializeField] private Transform target;
     public float detectionRange = 10f;
     public float stopDistance = 2f;
     public float attackRange = 2.5f;
@@ -25,6 +26,11 @@ public class EnemyAI : MonoBehaviour
     private bool chasingPlayer = false;
     private float nextAttackTime;
 
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
+    }
+
     void Start()
     {
         stats = GetComponent<CharacterStats>();
@@ -37,10 +43,7 @@ public class EnemyAI : MonoBehaviour
         agent.updateUpAxis = false;
 
         if (target == null)
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null) target = player.transform;
-        }
+            Debug.LogWarning($"{name}: Enemy target is not assigned.", this);
 
         // Переносим врага на ближайшую точку NavMesh, если он вне сетки
         NavMeshHit hit;
