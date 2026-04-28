@@ -1,8 +1,10 @@
 using UnityEngine;
+using Game.CoreRuntime;
 
 public class SceneRuntimeBootstrap : MonoBehaviour
 {
     [Header("Scene References")]
+    [SerializeField] private GameSession gameSessionPrefab;
     [SerializeField] private Transform playerTarget;
     [SerializeField] private DamageTextManager damageTextManager;
     [SerializeField] private EnemyAI[] enemyAgents;
@@ -11,6 +13,8 @@ public class SceneRuntimeBootstrap : MonoBehaviour
 
     private void Awake()
     {
+        EnsureGameSession();
+
         if (damageTextManager == null)
             damageTextManager = FindAnyObjectByType<DamageTextManager>();
 
@@ -39,6 +43,24 @@ public class SceneRuntimeBootstrap : MonoBehaviour
                 if (handler != null)
                     handler.SetDamageTextManager(damageTextManager);
             }
+        }
+    }
+
+    private void EnsureGameSession()
+    {
+        if (GameSession.Instance != null)
+        {
+            return;
+        }
+
+        if (gameSessionPrefab != null)
+        {
+            Instantiate(gameSessionPrefab);
+        }
+        else
+        {
+            GameObject fallback = new GameObject("GameSession");
+            fallback.AddComponent<GameSession>();
         }
     }
 }

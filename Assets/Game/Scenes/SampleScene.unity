@@ -2392,6 +2392,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2c54ecaa59f784d89441bf2afb97e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EffectHandler
+  damageTextManager: {fileID: 0}
   _activeEffects: []
 --- !u!114 &1093873473
 MonoBehaviour:
@@ -2405,6 +2406,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cb7c3c51f0b7874b9f58e17d93a033e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
+  damageTextManager: {fileID: 0}
   strength: 10
   agility: 10
   constitution: 10
@@ -2574,9 +2576,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40d2af8a230c302448fe24aaaa89eebb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
-  stats: {fileID: 0}
-  agent: {fileID: 0}
-  target: {fileID: 0}
+  stats: {fileID: 1093873473}
+  agent: {fileID: 1093873479}
+  target: {fileID: 1527616343}
   detectionRange: 8
   stopDistance: 2.5
   attackRange: 3
@@ -2641,6 +2643,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageTextManager
   prefab: {fileID: 8422826289149567985, guid: f514fd05e5632dd49a641054842048a4, type: 3}
   canvasTransform: {fileID: 1858511026}
+  worldCamera: {fileID: 0}
 --- !u!4 &1217899309
 Transform:
   m_ObjectHideFlags: 0
@@ -3572,6 +3575,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5cb7c3c51f0b7874b9f58e17d93a033e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CharacterStats
+  damageTextManager: {fileID: 0}
   strength: 10
   agility: 10
   constitution: 10
@@ -3594,6 +3598,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5d2c54ecaa59f784d89441bf2afb97e3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EffectHandler
+  damageTextManager: {fileID: 0}
   _activeEffects: []
 --- !u!212 &1527616350
 SpriteRenderer:
