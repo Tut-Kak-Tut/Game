@@ -1,5 +1,6 @@
 using UnityEngine;
 using System; // Нужно для Action
+using Game.CoreRuntime;
 
 public class CharacterStats : MonoBehaviour
 {
@@ -9,6 +10,13 @@ public class CharacterStats : MonoBehaviour
     // СОБЫТИЯ: на них будут подписываться UI и другие системы
     public event Action OnResourceChanged;      // Когда меняется текущее ХП/МП/Стамина
     public event Action OnStatsRecalculated;    // Когда меняются баффы (макс. статы)
+    public event Action OnDeath;                // Срабатывает один раз при переходе в IsDead
+
+    public bool IsDead { get; private set; }
+    public string CombatantId { get; private set; }
+    public string LastDamageSourceId { get; private set; }
+
+    public void SetCombatantId(string id) => CombatantId = id;
 
     [Header("--- CORE ATTRIBUTES ---")]
     public int strength = 10;
@@ -98,8 +106,10 @@ public class CharacterStats : MonoBehaviour
 
     private void HandleRegeneration()
     {
+        if (IsDead) return;
+
         if (regenTimer > 0) regenTimer -= Time.deltaTime;
-        
+
         bool isRegen = false;
         if (regenTimer <= 0)
         {
@@ -144,8 +154,12 @@ public class CharacterStats : MonoBehaviour
         return false;
     }
 
-    public void TakeDamage(float amount, DamageType type)
+    public void TakeDamage(float amount, DamageType type) => TakeDamage(amount, type, null, false);
+
+    public void TakeDamage(float amount, DamageType type, string sourceId, bool wasCrit)
     {
+        if (IsDead) return;
+
         float finalDamage = amount;
 
         // РАСЧЕТ УРОНА СО СТАТАМИ
@@ -154,31 +168,67 @@ public class CharacterStats : MonoBehaviour
         else if (type == DamageType.Magic)
             finalDamage = Mathf.Max(amount - magicResistance, 0);
 
-        // НАНЕСЕНИЕ УРОНА (МЫ ЭТО УЖЕ ДЕЛАЛИ)
+        // НАНЕСЕНИЕ УРОНА
         currentHealth = Mathf.Max(currentHealth - finalDamage, 0);
-        regenTimer = regenCooldown; 
+        regenTimer = regenCooldown;
 
-        // СОБЫТИЯ UI (МЫ ЭТО УЖЕ ДЕЛАЛИ)
+        if (!string.IsNullOrEmpty(sourceId))
+            LastDamageSourceId = sourceId;
+
+        // СОБЫТИЯ UI
         OnResourceChanged?.Invoke();
 
-        // ========================================================
-        // ВОТ ТУТ ДОБАВЛЯЕМ ВСПЛЫВАЮЩИЙ ТЕКСТ!
-        // ========================================================
+        // Floating damage text
         if (damageTextManager != null)
         {
-            // Спавним чуть выше центра персонажа (+ 2 метра вверх)
             Vector3 spawnPos = transform.position + Vector3.up * 2f;
-            
+
             Color textColor = Color.white;
             if (type == DamageType.Magic) textColor = Color.cyan;
             if (type == DamageType.True) textColor = Color.yellow;
+            if (wasCrit) textColor = new Color(1f, 0.55f, 0f); // оранжевый для крита
 
             damageTextManager.SpawnText(spawnPos, Mathf.RoundToInt(finalDamage).ToString(), textColor);
         }
-        // ========================================================
 
         if (currentHealth <= 0) Die();
     }
 
-    void Die() => Debug.Log(gameObject.name + " погиб!");
+    public void Heal(float amount)
+    {
+        if (IsDead) return;
+        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
+        OnResourceChanged?.Invoke();
+    }
+
+    public void RestoreAllResources()
+    {
+        currentHealth = maxHealth;
+        currentMana = maxMana;
+        currentStamina = maxStamina;
+        OnResourceChanged?.Invoke();
+    }
+
+    public void Revive()
+    {
+        if (!IsDead) return;
+        IsDead = false;
+        RestoreAllResources();
+    }
+
+    void Die()
+    {
+        if (IsDead) return;
+        IsDead = true;
+
+        OnDeath?.Invoke();
+
+        var bus = GameSession.Instance?.EventBus;
+        if (bus != null)
+        {
+            string victimId = string.IsNullOrEmpty(CombatantId) ? gameObject.name : CombatantId;
+            int teamId = TryGetComponent<Game.Combat.CombatantBehaviour>(out var cb) ? cb.TeamId : 0;
+            bus.Publish(new CombatantDiedEvent(victimId, LastDamageSourceId ?? string.Empty, teamId));
+        }
+    }
 }
