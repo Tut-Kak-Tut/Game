@@ -5,22 +5,21 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private CharacterStats stats; // Ссылка на наш новый скрипт
+    [SerializeField] private CharacterStats stats;
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator animator;
 
     [Header("Movement Settings")]
-    [SerializeField] private float walkSpeed = 5f;
-    [SerializeField] private float sprintMultiplier = 1.7f;
+    [SerializeField] private float sprintMultiplier = 1.6f;
     
     [Header("Dash Settings")]
-    [SerializeField] private float dashSpeed = 15f;
+    [SerializeField] private float dashSpeedMultiplier = 3f; // Рывок в 3 раза быстрее ходьбы
     [SerializeField] private float dashDuration = 0.2f;
-    [SerializeField] private float dashCooldown = 1f;
-    [SerializeField] private float dashStaminaCost = 25f; // Стоимость рывка
+    [SerializeField] private float dashCooldown = 0.8f;
+    [SerializeField] private float dashStaminaCost = 20f;
 
     [Header("Sprint Settings")]
-    [SerializeField] private float sprintStaminaCost = 15f; // Трата стамины в СЕКУНДУ при беге
+    [SerializeField] private float sprintStaminaCost = 12f;
     
     private Vector2 moveInput;
     private Vector2 lastMoveDirection = Vector2.down;
@@ -30,7 +29,6 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
-        // Если забыл перетащить в инспекторе, попробуем найти на этом же объекте
         if (stats == null) stats = GetComponent<CharacterStats>();
     }
 
@@ -47,7 +45,6 @@ public class PlayerController : MonoBehaviour
 
     private void OnDash(InputValue value)
     {
-        // Проверяем: нажата кнопка + КД прошел + мы не в рывке + ЕСТЬ СТАМИНА
         if (value.isPressed && canDash && !isDashing && stats.UseStamina(dashStaminaCost))
         {
             StartCoroutine(DashRoutine());
@@ -58,22 +55,17 @@ public class PlayerController : MonoBehaviour
     {
         if (isDashing) return;
 
-        // Логика траты стамины при спринте
-        HandleSprintStamina();
+        HandleSprintLogic();
         UpdateAnimations();
     }
 
-    private void HandleSprintStamina()
+    private void HandleSprintLogic()
     {
+        // Если кнопка зажата и мы идем
         if (isSprinting && moveInput.sqrMagnitude > 0)
         {
-            // Пытаемся потратить стамину. UseStamina вернет false, если её нет.
             bool hasStamina = stats.UseStamina(sprintStaminaCost * Time.deltaTime);
-            
-            if (!hasStamina)
-            {
-                isSprinting = false; // Принудительно выключаем бег, если устали
-            }
+            if (!hasStamina) isSprinting = false;
         }
     }
 
@@ -81,26 +73,27 @@ public class PlayerController : MonoBehaviour
     {
         if (isDashing) return;
 
-        // Скорость зависит от того, бежим ли мы (isSprinting уже учитывает наличие стамины)
-        float currentSpeed = isSprinting ? walkSpeed * sprintMultiplier : walkSpeed;
+        // Берем скорость прямо из CharacterStats (которая зависит от Ловкости)
+        float baseSpeed = stats.walkSpeed;
+        float currentSpeed = isSprinting ? baseSpeed * sprintMultiplier : baseSpeed;
+        
         rb.linearVelocity = moveInput * currentSpeed;
     }
 
     private void UpdateAnimations()
     {
-        if (animator != null)
+        if (animator == null) return;
+
+        animator.SetFloat("Horizontal", moveInput.x);
+        animator.SetFloat("Vertical", moveInput.y);
+        
+        float animSpeed = (isSprinting && moveInput.sqrMagnitude > 0) ? sprintMultiplier : moveInput.sqrMagnitude;
+        animator.SetFloat("Speed", animSpeed);
+        
+        if (moveInput.sqrMagnitude > 0.01f)
         {
-            animator.SetFloat("Horizontal", moveInput.x);
-            animator.SetFloat("Vertical", moveInput.y);
-            
-            float animSpeed = isSprinting && moveInput.sqrMagnitude > 0 ? sprintMultiplier : moveInput.sqrMagnitude;
-            animator.SetFloat("Speed", animSpeed);
-            
-            if (moveInput.sqrMagnitude > 0.01f)
-            {
-                animator.SetFloat("LastMoveX", moveInput.x);
-                animator.SetFloat("LastMoveY", moveInput.y);
-            }
+            animator.SetFloat("LastMoveX", moveInput.x);
+            animator.SetFloat("LastMoveY", moveInput.y);
         }
     }
 
@@ -110,7 +103,8 @@ public class PlayerController : MonoBehaviour
         isDashing = true;
 
         Vector2 dashDir = moveInput != Vector2.zero ? moveInput.normalized : lastMoveDirection;
-        rb.linearVelocity = dashDir * dashSpeed;
+        // Скорость рывка теперь тоже отталкивается от статов ловкости
+        rb.linearVelocity = dashDir * (stats.walkSpeed * dashSpeedMultiplier);
 
         yield return new WaitForSeconds(dashDuration);
 
