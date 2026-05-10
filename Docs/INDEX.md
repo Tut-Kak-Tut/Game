@@ -2,6 +2,12 @@
 
 **RPG Game Engine — Complete Documentation**
 
+## 🎨 Vision & Design
+
+| Document | Purpose | Audience |
+|----------|---------|----------|
+| [GDD.md](GDD.md) | Game vision, world, core loop, classes, mechanics roadmap | Designers, project team |
+
 ## 📚 Main Documentation
 
 | Document | Purpose | Audience |
@@ -13,6 +19,10 @@
 | [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) | Status, roadmap, issues | Project team |
 
 ## 🎯 Quick Links by Role
+
+### 🎨 Designer / Game Director
+1. Start: [GDD.md](GDD.md) — Vision, world, classes, core loop
+2. Cross-ref: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) — What exists vs. what's planned
 
 ### 🚀 New Developer
 1. Start: [README.md](README.md) — Setup & overview
@@ -34,6 +44,23 @@
 3. Look: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) — Known issues
 
 ## 📖 Documentation Structure
+
+### GDD.md
+- Vision & design pillars
+- Setting, tone, lore direction
+- World structure (tutorial → hub → 5 regions → procedural dungeons)
+- Core gameplay loop
+- Combat & death modes (Standard / Hardcore)
+- Character progression (3 base classes × subclasses + passive tree)
+- Loot philosophy (hybrid)
+- Quests & emergent discovery
+- NPCs, dialogue, vendors
+- Crafting (4 professions)
+- Mounts & companions
+- Economy (gold/silver, 1:100)
+- Day/night cycle
+- Streaming architecture for regions
+- Roadmap & open questions
 
 ### README.md
 - Project description
@@ -93,6 +120,7 @@ All documents support bilingual content (English/Russian with clear separators).
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2026-04-28 | Initial complete documentation |
+| 1.1 | 2026-05-10 | Added GDD.md (game vision & design document) |
 
 ## ✅ Documentation Checklist
 
@@ -115,7 +143,17 @@ All documents support bilingual content (English/Russian with clear separators).
 
 Все документы доступны выше на английском, выше русской версии — см. структуру выше.
 
+## 🎨 Видение и дизайн
+
+| Документ | Назначение | Аудитория |
+|----------|------------|-----------|
+| [GDD.md](GDD.md) | Видение игры, мир, основной цикл, классы, дорожная карта механик | Дизайнеры, команда |
+
 ## 🎯 Быстрые ссылки по ролям
+
+### 🎨 Дизайнер / Гейм-директор
+1. Начните: [GDD.md](GDD.md) — Видение, мир, классы, основной цикл
+2. Сопоставьте: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) — Что уже есть vs. что в планах
 
 ### 🚀 Новый разработчик
 1. Начните: [README.md](README.md) — Обзор и настройка
@@ -137,6 +175,23 @@ All documents support bilingual content (English/Russian with clear separators).
 3. Поиск: [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) — Известные проблемы
 
 ## 📖 Структура документации
+
+### GDD.md
+- Видение и принципы дизайна
+- Сеттинг, тон, направление лора
+- Структура мира (туториал → хаб → 5 регионов → процедурные подземелья)
+- Основной игровой цикл
+- Бой и режимы смерти (Standard / Hardcore)
+- Прогрессия персонажа (3 базовых класса × подклассы + дерево пассивок)
+- Философия лута (гибрид)
+- Квесты и эмерджентное исследование
+- NPC, диалоги, торговцы
+- Ремёсла (4 профессии)
+- Маунты и компаньоны
+- Экономика (золотые/серебряные, 1:100)
+- Цикл дня/ночи
+- Архитектура стриминга регионов
+- Дорожная карта и открытые вопросы
 
 ### README.md
 - Описание проекта
