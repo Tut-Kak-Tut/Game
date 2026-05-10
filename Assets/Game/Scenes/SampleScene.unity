@@ -3523,7 +3523,8 @@ GameObject:
   - component: {fileID: 1527616352}
   - component: {fileID: 1527616353}
   - component: {fileID: 1527616355}
-  - component: {fileID: 1527616354}
+  - component: {fileID: 1527616360}
+  - component: {fileID: 1527616361}
   m_Layer: 9
   m_Name: Player
   m_TagString: Player
@@ -3877,7 +3878,7 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 1.4220896, y: 2.4069214}
   m_EdgeRadius: 0
---- !u!114 &1527616354
+--- !u!114 &1527616360
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -3886,13 +3887,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1527616339}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 010195e76adfee7429446012f294adae, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerMeleeAttack
-  weaponData: {fileID: 11400000, guid: 47dc567f478428e4bbd35f993fe782a1, type: 2}
+  m_Script: {fileID: 11500000, guid: bdf503d31cd90a94ab7b90953b49e1b3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerEquipment
+  defaultWeapon: {fileID: 11400000, guid: 47dc567f478428e4bbd35f993fe782a1, type: 2}
+--- !u!114 &1527616361
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1527616339}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 87694a7ccd827d94ca9ac9653e3609e8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerWeaponAttack
   animator: {fileID: 1527616351}
   controller: {fileID: 1527616342}
   combatant: {fileID: 1527616355}
+  equipment: {fileID: 1527616360}
   enemyLayer:
     serializedVersion: 2
     m_Bits: 1024

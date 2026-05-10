@@ -134,4 +134,20 @@ namespace Game.CoreRuntime
             TimestampUtc = DateTime.UtcNow;
         }
     }
+
+    public readonly struct PlayerWeaponEquippedEvent : IGameEvent
+    {
+        public readonly string WeaponId;
+        public readonly string DisplayName;
+        public readonly DamageType WeaponDamageType;
+        public DateTime TimestampUtc { get; }
+
+        public PlayerWeaponEquippedEvent(string weaponId, string displayName, DamageType weaponDamageType)
+        {
+            WeaponId = weaponId;
+            DisplayName = displayName;
+            WeaponDamageType = weaponDamageType;
+            TimestampUtc = DateTime.UtcNow;
+        }
+    }
 }
