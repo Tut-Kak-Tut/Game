@@ -21,11 +21,4 @@ namespace Game.Combat
         bool IsAlive { get; }
         RuntimeStatBlock Stats { get; }
     }
-
-    public enum DamageType
-    {
-        Physical = 0,
-        Magic = 1,
-        True = 2
-    }
 }

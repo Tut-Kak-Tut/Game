@@ -39,11 +39,7 @@ namespace Game.Combat
                 return;
             }
 
-            global::DamageType mapped = global::DamageType.True;
-            if (damageType == DamageType.Physical) mapped = global::DamageType.Physical;
-            else if (damageType == DamageType.Magic) mapped = global::DamageType.Magic;
-
-            characterStats.TakeDamage(amount, mapped);
+            characterStats.TakeDamage(amount, damageType);
         }
 
         public void ApplyHealing(float amount, GameObject source)
