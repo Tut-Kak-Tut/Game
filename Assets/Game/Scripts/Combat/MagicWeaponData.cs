@@ -20,7 +20,7 @@ namespace Game.Combat
             {
                 Spell = spell,
                 Direction = facing,
-                TargetPoint = (Vector2)sourceGO.transform.position + facing * 5f
+                TargetPoint = invoker.AimPoint
             };
 
             return caster.TryCast(intent);

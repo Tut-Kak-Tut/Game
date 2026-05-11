@@ -20,6 +20,8 @@ public class PlayerWeaponAttack : MonoBehaviour
     public LayerMask EnemyLayer => enemyLayer;
     public CombatantBehaviour Combatant => combatant;
 
+    public Vector2 AimPoint { get; private set; }
+
     private bool _onCooldown;
 
     private void Awake()
@@ -52,7 +54,7 @@ public class PlayerWeaponAttack : MonoBehaviour
         if (weapon.hitFrameDelay > 0f)
             yield return new WaitForSeconds(weapon.hitFrameDelay);
 
-        Vector2 facing = controller != null ? controller.FacingDirection : Vector2.down;
+        Vector2 facing = GetMouseAimDirection();
         bool fired = weapon.PerformAttack(this, facing, gameObject);
 
         float remaining = Mathf.Max(0f, weapon.animDuration - weapon.hitFrameDelay);
@@ -62,6 +64,15 @@ public class PlayerWeaponAttack : MonoBehaviour
             yield return new WaitForSeconds(weapon.cooldown);
 
         _onCooldown = false;
+    }
+
+    private Vector2 GetMouseAimDirection()
+    {
+        if (Mouse.current == null || Camera.main == null)
+            return controller != null ? controller.FacingDirection : Vector2.down;
+        AimPoint = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        Vector2 toMouse = AimPoint - (Vector2)transform.position;
+        return toMouse.sqrMagnitude < 0.0001f ? Vector2.right : toMouse.normalized;
     }
 
     private void OnDrawGizmosSelected()
