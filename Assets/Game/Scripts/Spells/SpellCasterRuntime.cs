@@ -40,10 +40,13 @@ namespace Game.Spells
         public SpellCastState State { get; private set; } = SpellCastState.Idle;
         public string SaveId => "spells.player";
         public IReadOnlyList<SpellDefinition> Definitions => knownDefinitions;
+        public bool IsCasting => isCasting;
 
         private readonly Dictionary<string, float> cooldowns = new();
         private CombatantBehaviour caster;
         private bool isCasting;
+        private Coroutine activeCastRoutine;
+        private string activeSpellId;
 
         private void Awake()
         {
@@ -90,7 +93,7 @@ namespace Game.Spells
                 return false;
             }
 
-            StartCoroutine(CastRoutine(intent));
+            activeCastRoutine = StartCoroutine(CastRoutine(intent));
             return true;
         }
 
@@ -99,9 +102,28 @@ namespace Game.Spells
             return cooldowns.TryGetValue(spellId, out float value) ? value : 0f;
         }
 
+        public void Interrupt()
+        {
+            if (!isCasting) return;
+
+            if (activeCastRoutine != null)
+            {
+                StopCoroutine(activeCastRoutine);
+                activeCastRoutine = null;
+            }
+
+            string interruptedId = activeSpellId ?? string.Empty;
+            isCasting = false;
+            State = SpellCastState.Idle;
+            activeSpellId = null;
+
+            GameSession.Instance?.EventBus.Publish(new SpellResolvedEvent(interruptedId, true));
+        }
+
         private IEnumerator CastRoutine(SpellCastIntent intent)
         {
             isCasting = true;
+            activeSpellId = intent.Spell.id;
             State = SpellCastState.Priming;
             GameSession.Instance?.EventBus.Publish(new SpellCastStartEvent(intent.Spell.id));
             yield return new WaitForSeconds(intent.Spell.castTime);
@@ -119,7 +141,7 @@ namespace Game.Spells
                 characterStats.UseStamina(intent.Spell.staminaCost);
             }
 
-            GameSession.Instance?.EventBus.Publish(new SpellResolvedEvent(intent.Spell.id));
+            GameSession.Instance?.EventBus.Publish(new SpellResolvedEvent(intent.Spell.id, false));
             State = SpellCastState.Recover;
             yield return new WaitForSeconds(intent.Spell.recoverTime);
 
@@ -127,6 +149,8 @@ namespace Game.Spells
             cooldowns[intent.Spell.id] = intent.Spell.cooldown;
             State = SpellCastState.Idle;
             isCasting = false;
+            activeCastRoutine = null;
+            activeSpellId = null;
         }
 
         public object CaptureState()

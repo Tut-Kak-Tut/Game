@@ -1,4 +1,6 @@
 
+using System.Collections;
+using Game.Combat;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -8,6 +10,7 @@ public class EnemyAI : MonoBehaviour
     [Header("Runtime References")]
     [SerializeField] private CharacterStats stats;
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private CombatantBehaviour combatant;
 
     [Header("Targeting")]
     [SerializeField] private Transform target;
@@ -20,11 +23,15 @@ public class EnemyAI : MonoBehaviour
     public Transform[] patrolPoints;
     public float patrolWaitTime = 1.5f;
 
+    [Header("Death")]
+    [SerializeField] private float despawnDelay = 2f;
+
     private int currentPatrolIndex = 0;
     public float patrolWaitTimer = 0f;
     private bool waitingAtPoint = false;
     private bool chasingPlayer = false;
     private float nextAttackTime;
+    private bool _deathHandled;
 
     public void SetTarget(Transform newTarget)
     {
@@ -34,6 +41,7 @@ public class EnemyAI : MonoBehaviour
     void Start()
     {
         stats = GetComponent<CharacterStats>();
+        if (combatant == null) combatant = GetComponent<CombatantBehaviour>();
         agent = GetComponent<NavMeshAgent>();
         if (agent == null)
             agent = gameObject.AddComponent<NavMeshAgent>();
@@ -49,11 +57,24 @@ public class EnemyAI : MonoBehaviour
         NavMeshHit hit;
         if (NavMesh.SamplePosition(transform.position, out hit, 1f, NavMesh.AllAreas))
             transform.position = hit.position;
+
+        if (stats != null) stats.OnDeath += HandleDeath;
+    }
+
+    private void OnDestroy()
+    {
+        if (stats != null) stats.OnDeath -= HandleDeath;
     }
 
     void Update()
     {
+        if (combatant != null && !combatant.IsAlive) return;
         if (target == null || patrolPoints == null || patrolPoints.Length == 0) return;
+        if (combatant != null && combatant.IsStaggered)
+        {
+            if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+            return;
+        }
 
         float playerDist = Vector3.Distance(transform.position, target.position);
         bool playerNear = playerDist <= detectionRange;
@@ -154,16 +175,39 @@ public class EnemyAI : MonoBehaviour
     }
     void TryAttack()
     {
-        if (Time.time >= nextAttackTime)
+        if (Time.time < nextAttackTime) return;
+        if (combatant != null && (combatant.IsStaggered || !combatant.IsAlive)) return;
+
+        CombatantBehaviour playerCombatant = target.GetComponent<CombatantBehaviour>();
+        if (playerCombatant != null && playerCombatant.IsAlive)
+        {
+            playerCombatant.ApplyDamage(stats.physicalDamage, DamageType.Physical, gameObject);
+        }
+        else
         {
             CharacterStats playerStats = target.GetComponent<CharacterStats>();
             if (playerStats != null)
-            {
-                Debug.Log(gameObject.name + " ударил игрока!");
-                playerStats.TakeDamage(stats.physicalDamage, DamageType.Physical);
-            }
-            nextAttackTime = Time.time + attackCooldown;
+                playerStats.TakeDamage(stats.physicalDamage, DamageType.Physical, CombatantId(), false);
         }
+
+        nextAttackTime = Time.time + attackCooldown;
+    }
+
+    private string CombatantId() => combatant != null ? combatant.CombatantId : gameObject.name;
+
+    private void HandleDeath()
+    {
+        if (_deathHandled) return;
+        _deathHandled = true;
+
+        if (agent != null && agent.isOnNavMesh) agent.isStopped = true;
+        StartCoroutine(DespawnRoutine());
+    }
+
+    private IEnumerator DespawnRoutine()
+    {
+        yield return new WaitForSeconds(despawnDelay);
+        Destroy(gameObject);
     }
 
     void OnDrawGizmosSelected()

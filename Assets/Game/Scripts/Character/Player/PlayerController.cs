@@ -24,8 +24,11 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     private Vector2 lastMoveDirection = Vector2.down;
     private bool isDashing;
-    private bool isSprinting; 
+    private bool isSprinting;
     private bool canDash = true;
+
+    public Vector2 FacingDirection => lastMoveDirection.sqrMagnitude > 0.01f ? lastMoveDirection : Vector2.down;
+    public bool IsDashing => isDashing;
 
     private void Awake()
     {

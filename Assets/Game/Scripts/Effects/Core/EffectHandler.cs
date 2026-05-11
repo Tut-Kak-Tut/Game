@@ -26,6 +26,12 @@ public class EffectHandler : MonoBehaviour
         damageTextManager = manager;
     }
 
+    public void TriggerHitFlash()
+    {
+        if (!gameObject.activeInHierarchy) return;
+        StartCoroutine(FlashColor(Color.white, 0.12f));
+    }
+
     public void ApplyEffect(EffectData data)
     {
         var existingEffects = _activeEffects.FindAll(e => e.Data == data);

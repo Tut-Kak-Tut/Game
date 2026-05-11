@@ -37,6 +37,7 @@ namespace Game.Skills
         private readonly HashSet<string> unlocked = new();
         private CombatantBehaviour combatant;
         private IDisposable xpSubscription;
+        private IDisposable xpDeductSubscription;
 
         private void Awake()
         {
@@ -45,13 +46,17 @@ namespace Game.Skills
             {
                 GameSession.Instance.SaveService.RegisterProvider(this);
                 xpSubscription = GameSession.Instance.EventBus.Subscribe<XpGrantedEvent>(OnXpGranted);
+                xpDeductSubscription = GameSession.Instance.EventBus.Subscribe<XpDeductedEvent>(OnXpDeducted);
             }
         }
 
         private void OnDestroy()
         {
             xpSubscription?.Dispose();
+            xpDeductSubscription?.Dispose();
         }
+
+        public int GetXpToNextLevel() => GetXpThreshold(State.Level);
 
         public bool TryUnlockNode(SkillNodeDefinition node)
         {
@@ -140,6 +145,11 @@ namespace Game.Skills
                 State.AvailablePoints += pointsPerLevel;
                 GameSession.Instance?.EventBus.Publish(new LevelUpEvent(State.Level));
             }
+        }
+
+        private void OnXpDeducted(XpDeductedEvent evt)
+        {
+            State.CurrentXp = Mathf.Max(0, State.CurrentXp - Mathf.Max(0, evt.Amount));
         }
 
         private int GetXpThreshold(int level) => baseXpPerLevel + (level - 1) * 25;

@@ -76,21 +76,29 @@ public class UI_InventorySlot : MonoBehaviour, IPointerClickHandler
     {
         ItemData item = slotData.item;
 
-        // Проверяем, можно ли это вообще использовать
+        // ОРУЖИЕ: ПКМ экипирует
+        if (item is WeaponItemData weaponItem && weaponItem.weapon != null)
+        {
+            PlayerEquipment eq = Object.FindAnyObjectByType<PlayerEquipment>();
+            if (eq != null)
+            {
+                eq.Equip(weaponItem.weapon);
+                Debug.Log($"Экипировано: {weaponItem.weapon.displayName}");
+            }
+            else
+            {
+                Debug.LogWarning("PlayerEquipment не найден в сцене.");
+            }
+            return;
+        }
+
+        // РАСХОДНИКИ
         if (item.itemType == ItemType.Consumable)
         {
             Debug.Log($"Использовано: {item.itemName}. Эффект здоровья: {item.healthEffect}");
-            
-            
-            // Уменьшаем количество
+
             slotData.amount--;
-
-            // Если предметы закончились - очищаем слот
-            if (slotData.amount <= 0)
-            {
-                slotData.item = null;
-            }
-
+            if (slotData.amount <= 0) slotData.item = null;
             display.RefreshUI();
         }
         else
